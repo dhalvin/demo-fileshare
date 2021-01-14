@@ -1,0 +1,18 @@
+{
+  "name": "ha-fileshare",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node ./bin/www",
+    "devstart": "node ./bin/dev-https.js"
+  },
+  "dependencies": {
+    "bcrypt": "^5.0.0",
+    "cookie-parser": "~1.4.4",
+    "debug": "~2.6.9",
+    "express": "~4.16.1",
+    "express-handlebars": "^5.2.0",
+    "http-errors": "~1.6.3",
+    "winston": "^3.3.3"
+  }
+}
