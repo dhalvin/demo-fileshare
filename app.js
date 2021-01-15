@@ -4,6 +4,9 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('./logger');
 var handlebars = require('express-handlebars');
+var passport = require('passport');
+var methodOverride = require('method-override');
+var session = require('express-session');
 
 var router = require('./routes/router');
 
@@ -19,6 +22,14 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUnitialized: false
+}));
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(methodOverride('_method'));
 
 app.use('/', router);
 
