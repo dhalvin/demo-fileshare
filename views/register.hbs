@@ -1,20 +1,29 @@
+{{#each messages}}
+<div class="alert alert-danger" role="alert">
+  {{this}}
+</div>
+{{/each}}
+{{#each errors}}
+<div class="alert alert-danger" role="alert">
+  {{msg}}
+</div>
+{{/each}}
 <form action="/register" method="POST">
   <div class="form-group">
     <label for="fname">First Name</label>
-    <input name="fname" type="text" class="form-control" id="fname" placeholder="First name">
+    <input name="fname" type="text" class="form-control" id="fname" placeholder="First name" {{#if fname}}value="{{fname}}"{{/if}}>
   </div>
   <div class="form-group">
     <label for="lname">Last Name</label>
-    <input name="lname" type="text" class="form-control" id="lname" placeholder="Last name">
+    <input name="lname" type="text" class="form-control" id="lname" placeholder="Last name" {{#if lname}}value="{{lname}}"{{/if}}>
   </div>
   <div class="form-group">
     <label for="regcode">Registration Code</label>
-    <input name="regcode" type="text" class="form-control" id="regcode" placeholder="Registration code">
+    <input name="regcode" type="text" class="form-control" id="regcode" placeholder="Registration code" {{#if regcode}}value="{{regcode}}"{{/if}}>
   </div>
   <div class="form-group">
     <label for="email">Email address</label>
-    <input name="email" type="email" class="form-control" id="email" aria-describedby="emailHelp" placeholder="Enter email">
-    <small id="emailHelp" class="form-text text-muted">This is the email address you used to register your account.</small>
+    <input name="email" type="text" class="form-control" id="email" aria-describedby="emailHelp" placeholder="Enter email" {{#if email}}value="{{email}}"{{/if}}>
   </div>
   <div class="form-group">
     <label for="password">Password</label>
