@@ -5,21 +5,15 @@ const mysql = require('../db-config');
 
 const passport = require('passport');
 const initializePassport = require('../passport-config');
-initializePassport(
-  passport, 
-  email => users.find(user => user.email === email),
-  id => users.find(user => user.id === id)
-);
+initializePassport(passport, getUserFromEmail, getUserFromId);
 
 const validator = require('express-validator');
 
 const router = express.Router();
 
-//TODO DB
-const users = [];
 /* Home page. */
 router.get('/', checkAuthenticated, function(req, res, next) {
-  res.render('index', { title: '' });
+  res.render('index', { title: '', fname: req.user.fname });
 });
 
 /* Login Page */
@@ -63,21 +57,26 @@ router.post('/register',
   }),
   validator.check('policycheck', 'You must agree to our Terms and Conditions and Privacy Policy before you may register.').exists(),
   collectValidationErrors('/register'),
+  checkEmailNotUsed,
   async function(req, res, next) {
     try {
+      //Check org code is good
+      //Create user in DB
       const hashedPassword = await bcrypt.hash(req.body.password, 10);
-      users.push({
-        id: Date.now().toString(),
-        fname: req.body.fname,
-        lname: req.body.lname,
-        email: req.body.email,
-        password: hashedPassword
-      })
-      res.redirect('/login');
+      mysql.query('INSERT INTO User (fname, lname, orgid, email, password, regdate) VALUES (?, ?, ?, ?, ?, ?)', [req.body.fname, req.body.lname, 1, req.body.email, hashedPassword, Date.now()],
+        function(error, result, fields){
+        if(!error){
+          res.redirect('/login');
+        }
+        else{
+          logger.error(error);
+          req.session.messages = ["Something went wrong, please try again."];
+          res.redirect('/register');
+        }
+      });
     } catch {
       res.redirect('/register');
     }
-    logger.info(users);
 });
 
 /* Forgot Password Page */
@@ -146,6 +145,28 @@ function collectValidationErrors(redirect){
   }
 }
 
+function checkEmailNotUsed(req, res, next){
+  try {
+    mysql.query('SELECT email FROM User WHERE email = ?', [req.body.email],
+      function(error, results, fields){
+        if(!error){
+          if(results.length > 0){
+            req.session.messages = ["There is already an account registered with that email address."];
+            return res.redirect('/register');
+          }
+          else{
+            next();
+          }
+        }
+        else{
+          logger.error(error);
+          req.session.messages = ["Something went wrong, please try again."];
+          res.redirect('/register');
+        }
+    });
+  }catch{}
+}
+
 function gatherSessionVariables(responseObect, req){
   if('messages' in req.session){
     responseObect.messages = req.session.messages;
@@ -162,4 +183,57 @@ function gatherSessionVariables(responseObect, req){
   }
 }
 
+async function getUserFromEmail(email){
+  return new Promise(function(resolve, reject){
+    mysql.query('SELECT id, fname, lname, email, password, orgid FROM User WHERE email = ?', [email],
+    function(error, results, fields){
+      if(!error){
+        if(results.length > 0){
+        resolve({
+          id: results[0].id,
+          fname: results[0].fname,
+          lname: results[0].lname,
+          email: results[0].email,
+          password: results[0].password.toString(),
+          orgid: results[0].orgid});
+        }
+        else{
+          resolve(null);
+        }
+      }
+      else{
+        logger.error(error);
+        req.session.messages = ["Something went wrong, please try again."];
+        resolve(null);
+      }
+    });
+  });
+}
+
+async function getUserFromId(id){
+  return new Promise(function(resolve, reject){
+    mysql.query('SELECT id, fname, lname, email, password, orgid FROM User WHERE id = ?', [id],
+    function(error, results, fields){
+      if(!error){
+        if(results.length > 0){
+          resolve({
+            id: results[0].id,
+            fname: results[0].fname,
+            lname: results[0].lname,
+            email: results[0].email,
+            password: results[0].password.toString(),
+            orgid: results[0].orgid});
+          }
+          else{
+            resolve(null);
+          }
+      }
+      else{
+        logger.error(error);
+        req.session.messages = ["Something went wrong, please try again."];
+        resolve(null);
+      }
+    });
+  });
+}
 module.exports = router;

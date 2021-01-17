@@ -11,7 +11,7 @@ CREATE TABLE User (
     orgid INT UNSIGNED NOT NULL,
     fname VARCHAR(255) NOT NULL,
     lname VARCHAR(255) NOT NULL,
-    regdate BIGINT,
+    regdate BIGINT NOT NULL,
     isadmin TINYINT(1) NOT NULL DEFAULT 0,
     loginattempts TINYINT,
     lastlogin INT UNSIGNED,

@@ -3,7 +3,7 @@ const bcrypt = require('bcrypt');
 
 function initialize(passport, getUserByEmail, getUserById){
     const authenticateUser = async function(email, password, done){
-        const user = getUserByEmail(email);
+        const user = await getUserByEmail(email);
         if (user == null){
             return done(null, false, {message: 'Incorrect Email or Password' });
         }
@@ -21,8 +21,9 @@ function initialize(passport, getUserByEmail, getUserById){
     };
     passport.use(new LocalStrategy({usernameField: 'email'}, authenticateUser));
     passport.serializeUser(function(user, done){return done(null, user.id)});
-    passport.deserializeUser(function(id, done){
-        return done(null, getUserById(id));
+    passport.deserializeUser(async function(id, done){
+        //var user = await getUserById(id);
+        return done(null, await getUserById(id));
     });
 }
 
