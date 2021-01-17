@@ -11,30 +11,31 @@
 <form action="/register" method="POST">
   <div class="form-group">
     <label for="fname">First Name</label>
-    <input name="fname" type="text" class="form-control" id="fname" placeholder="First name" {{#if fname}}value="{{fname}}"{{/if}}>
+    <input name="fname" type="text" class="form-control" id="fname" placeholder="First name" {{#if fname}}value="{{fname}}"{{/if}} required>
   </div>
   <div class="form-group">
     <label for="lname">Last Name</label>
-    <input name="lname" type="text" class="form-control" id="lname" placeholder="Last name" {{#if lname}}value="{{lname}}"{{/if}}>
+    <input name="lname" type="text" class="form-control" id="lname" placeholder="Last name" {{#if lname}}value="{{lname}}"{{/if}} required>
   </div>
   <div class="form-group">
     <label for="regcode">Registration Code</label>
-    <input name="regcode" type="text" class="form-control" id="regcode" placeholder="Registration code" {{#if regcode}}value="{{regcode}}"{{/if}}>
+    <input name="regcode" type="text" class="form-control" id="regcode" placeholder="Registration code" {{#if regcode}}value="{{regcode}}"{{/if}} required>
   </div>
   <div class="form-group">
     <label for="email">Email address</label>
-    <input name="email" type="text" class="form-control" id="email" aria-describedby="emailHelp" placeholder="Enter email" {{#if email}}value="{{email}}"{{/if}}>
+    <input name="email" type="email" class="form-control" id="email" placeholder="Enter email" {{#if email}}value="{{email}}"{{/if}} required>
   </div>
   <div class="form-group">
     <label for="password">Password</label>
-    <input name="password" type="password" class="form-control" id="password" placeholder="Password">
+    <input name="password" type="password" class="form-control" id="password" placeholder="Password" required>
+    <small id="passwordReqs" class="form-text text-muted">Your password must be between 14 and 32 characters long and contain at least 1 of the following: uppercase letters, lowercase letters, numbers, and symbols.</small>
   </div>
 <div class="form-group">
     <label for="passconf">Confirm Password</label>
-    <input name="passconf" type="password" class="form-control" id="passconf" placeholder="Confirm Password">
+    <input name="passconf" type="password" class="form-control" id="passconf" placeholder="Confirm Password" required>
   </div>
   <div class="form-group form-check">
-    <input name="policycheck" type="checkbox" class="form-check-input" id="policycheck">
+    <input name="policycheck" type="checkbox" class="form-check-input" id="policycheck" required>
     <label class="form-check-label" for="public-check">I have read and agree to our <a href="/">Terms and Conditions</a> and <a href="/">Privacy Policy</a></label>
   </div>
   <button type="submit" class="btn btn-primary">Register</button>

@@ -9,21 +9,17 @@
   {{msg}}
 </div>
 {{/each}}
-<form action="/login" method="POST">
+{{#if submitted}}
+If an account exists with that email address, you should receive an email with instructions on how to reset your password soon. Be sure to check your junk.
+{{else}}
+<form action="/forgot" method="POST">
   <div class="form-group">
     <label for="email">Email address</label>
     <input name="email" type="email" class="form-control" id="email" aria-describedby="emailHelp" placeholder="Enter email" {{#if email}}value="{{email}}"{{/if}} required>
     <small id="emailHelp" class="form-text text-muted">This is the email address you used to register your account.</small>
   </div>
-  <div class="form-group">
-    <label for="password">Password</label>
-    <input name="password" type="password" class="form-control" id="password" placeholder="Password" required>
-  </div>
-  <div class="form-group form-check">
-    <input name="publiccheck" type="checkbox" class="form-check-input" id="publiccheck">
-    <label class="form-check-label" for="public-check">This is a public or shared computer</label>
-  </div>
   <button type="submit" class="btn btn-primary">Login</button>
 </form>
 <small class="form-text text-muted"> Not Registered? <a href="/register">Register Now</a></small>
-<small class="form-text text-muted"> Trouble Logging in? <a href="/forgot">Forgot Password</a></small>
+<small class="form-text text-muted"> Remembered your password? <a href="/login">Login</a></small>
+{{/if}}

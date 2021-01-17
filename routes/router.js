@@ -1,18 +1,19 @@
-var express = require('express');
-var bcrypt = require('bcrypt');
-var logger = require('../logger');
+const express = require('express');
+const bcrypt = require('bcrypt');
+const logger = require('../logger');
+const mysql = require('../db-config');
 
-var passport = require('passport');
-var initializePassport = require('../passport-config');
+const passport = require('passport');
+const initializePassport = require('../passport-config');
 initializePassport(
   passport, 
   email => users.find(user => user.email === email),
   id => users.find(user => user.id === id)
 );
 
-var validator = require('express-validator');
+const validator = require('express-validator');
 
-var router = express.Router();
+const router = express.Router();
 
 //TODO DB
 const users = [];
@@ -24,21 +25,7 @@ router.get('/', checkAuthenticated, function(req, res, next) {
 /* Login Page */
 router.get('/login', checkNotAuthenticated, function(req, res, next) {
   const response = {title: 'Login'};
-  if('messages' in req.session){
-    response.messages = req.session.messages;
-    const fields = JSON.parse(req.session.fields);
-    Object.assign(response, fields);
-    delete req.session.messages;
-  }
-  if('errors' in req.session){
-    response.errors = JSON.parse(req.session.errors);
-    const fields = JSON.parse(req.session.fields);
-    Object.assign(response, fields);
-    delete req.session.errors;
-  }
-  if('fields' in req.session){
-    delete req.session.fields;
-  }
+  gatherSessionVariables(response, req);
   res.render('login', response);
 });
 
@@ -56,21 +43,7 @@ router.post('/login',
 /* Register Page */
 router.get('/register', checkNotAuthenticated, function(req, res, next) {
   const response = {title: 'Register'};
-  if('messages' in req.session){
-    response.messages = req.session.messages;
-    const fields = JSON.parse(req.session.fields);
-    Object.assign(response, fields);
-    delete req.session.messages;
-  }
-  if('errors' in req.session){
-    response.errors = JSON.parse(req.session.errors);
-    const fields = JSON.parse(req.session.fields);
-    Object.assign(response, fields);
-    delete req.session.errors;
-  }
-  if('fields' in req.session){
-    delete req.session.fields;
-  }
+  gatherSessionVariables(response, req);
   res.render('register', response);
 });
 
@@ -81,7 +54,7 @@ router.post('/register',
   validator.check('lname').trim().notEmpty().withMessage("Last name cannot be empty"),
   validator.check('regcode').trim().notEmpty().withMessage("Registration code cannot be empty"),
   validator.check('email', 'Please enter a valid email address').trim().notEmpty().withMessage("Email cannot be empty").isEmail().normalizeEmail(),
-  validator.check('password', 'Password must be between 14 and 32 characters').isLength({min:14, max:32}).bail().isStrongPassword({ minLength: 14}).withMessage('Password is not strong enough. Please check password requirements.'),
+  validator.check('password', 'Password must be between 14 and 32 characters').isLength({min:14, max:32}).bail().isStrongPassword({ minLength: 14 }).withMessage('Password is not strong enough. Please check password requirements.'),
   validator.check('passconf').custom(function(value, { req }){
     if(value !== req.body.password){
       throw new Error('Passwords do not match');
@@ -105,6 +78,25 @@ router.post('/register',
       res.redirect('/register');
     }
     logger.info(users);
+});
+
+/* Forgot Password Page */
+router.get('/forgot', checkNotAuthenticated, function(req, res, next){
+  const response = {title: 'Forgot Password'};
+  gatherSessionVariables(response, req);
+  res.render('forgot', response);
+});
+
+router.post('/forgot',
+  checkNotAuthenticated,
+  captureUserInput, 
+  validator.check('email', 'Please enter a valid email address').isEmail().normalizeEmail(),
+  collectValidationErrors('/forgot'),
+function(req, res, next){
+  var fields = JSON.parse(req.session.fields);
+  fields.submitted = true;
+  req.session.fields = JSON.stringify(fields);
+  res.redirect('/forgot');
 });
 
 /* Logout */
@@ -138,6 +130,7 @@ function captureUserInput(req, res, next){
     fields[field] = req.body[field];
   }
   req.session.fields = JSON.stringify(fields);
+  next();
 }
 
 function collectValidationErrors(redirect){
@@ -150,6 +143,22 @@ function collectValidationErrors(redirect){
     else{
       next();
     }
+  }
+}
+
+function gatherSessionVariables(responseObect, req){
+  if('messages' in req.session){
+    responseObect.messages = req.session.messages;
+    delete req.session.messages;
+  }
+  if('errors' in req.session){
+    responseObect.errors = JSON.parse(req.session.errors);
+    delete req.session.errors;
+  }
+  if('fields' in req.session){
+    const fields = JSON.parse(req.session.fields);
+    Object.assign(responseObect, fields);
+    delete req.session.fields;
   }
 }
 
