@@ -1,7 +1,85 @@
-<h1>{{title}}</h1>
-<p>Welcome {{fname}}</p>
-<a href="/login">Login</a>
-<a href="/register">Register</a>
-<form action="/logout?_method=DELETE" method="POST">
-  <button type="submit" class="btn btn-primary">Logout</button>
-</form>
+<div class="row px-2 py-4 p-md-5">
+  <div class="col-12 px-2 py-4 p-md-5 bg-light rounded shadow">
+    <h1>Secure File System</h1>
+    <h4>Welcome {{user.fname}} - {{user.org}}</h4>
+      <ul class="nav nav-tabs nav-fill" id="tabs" role="tablist">
+        <li class="nav-item">
+          <a class="nav-link active" id="files-tab" data-toggle="tab" href="#files" role="tab" aria-controls="files" aria-selected="true">Files</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" id="account-tab" data-toggle="tab" href="#account" role="tab" aria-controls="account" aria-selected="false">Account</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" id="admin-tab" data-toggle="tab" href="#admin" role="tab" aria-controls="admin" aria-selected="false">User Admin</a>
+        </li>
+        <li>
+          <form action="/logout?_method=DELETE" method="POST">
+            <button type="submit" class="btn btn-primary">Logout</button>
+          </form>
+        </li>
+      </ul>
+
+    <div class="tab-content" id="tabs-content">
+      <div class="tab-pane fade show active" id="files" role="tabpanel" aria-labelledby="files-tab">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="#">NPC</a></li>
+            <li class="breadcrumb-item active" aria-current="page">2020</li>
+          </ol>
+        </nav>
+        <div class="list-group list-group-flush">
+          <button type="button" class="list-group-item list-group-item-action">..back</button>
+          <button type="button" class="list-group-item list-group-item-action">Dapibus ac facilisis in</button>
+          <button type="button" class="list-group-item list-group-item-action">Morbi leo risus</button>
+          <button type="button" class="list-group-item list-group-item-action">Porta ac consectetur ac</button>
+          <button type="button" class="list-group-item list-group-item-action" disabled>Vestibulum at eros</button>
+        </div>
+      </div>
+      <div class="tab-pane fade" id="account" role="tabpanel" aria-labelledby="account-tab">
+        <h4>Account Info</h4>
+        <div class="form-group row">
+          <label for="org" class="col-sm-2 col-form-label">Organization</label>
+          <div class="col-sm-10">
+            <input name="org" type="text" class="form-control" id="org" value="{{user.org}}" readonly>
+          </div>
+        </div>
+        <div class="form-group row">
+          <label for="name" class="col-sm-2 col-form-label">Name</label>
+          <div class="col-sm-10">
+            <input name="name" type="text" class="form-control" id="name" value="{{user.fname}} {{user.lname}}" readonly>
+          </div>
+        </div>
+        <div class="form-group row">
+          <label for="email" class="col-sm-2 col-form-label">Email Address</label>
+          <div class="col-sm-10">
+            <input name="email" type="text" class="form-control" id="email" value="{{user.email}}" readonly>
+          </div>
+        </div>
+        <h4>Change Password</h4>
+        <form action="/changepassword" method="POST">
+          <div class="form-group row">
+            <label for="password" class="col-sm-2 col-form-label">Password</label>
+            <div class="col-sm-10">
+              <input name="password" type="password" class="form-control" id="password" placeholder="Current Password" required>
+            </div>
+          </div>
+          <small id="passwordReqs" class="form-text text-muted">Your password must be between 14 and 32 characters long and contain at least 1 of each of the following: uppercase letters, lowercase letters, numbers, and symbols.</small>
+          <div class="form-group row">
+            <label for="newpass" class="col-sm-2 col-form-label">New Password</label>
+            <div class="col-sm-10">
+              <input name="newpass" type="password" class="form-control" id="newpass" placeholder="New Password" required>
+            </div>
+          </div>
+          <div class="form-group row">
+            <label for="passconf" class="col-sm-2 col-form-label">Confirm New Password</label>
+            <div class="col-sm-10">
+              <input name="passconf" type="password" class="form-control" id="passconf" placeholder="Confirm New Password" required>
+            </div>
+          </div>
+          <button type="submit" id="changepassword" class="btn btn-primary">Change Password</button>
+        </form>
+      </div>
+      <div class="tab-pane fade" id="admin" role="tabpanel" aria-labelledby="admin-tab">...</div>
+    </div>
+  </div>
+</div>

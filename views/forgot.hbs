@@ -1,25 +1,33 @@
 
-{{#each messages}}
-<div class="alert alert-danger" role="alert">
-  {{this}}
-</div>
-{{/each}}
-{{#each errors}}
-<div class="alert alert-danger" role="alert">
-  {{msg}}
-</div>
-{{/each}}
-{{#if submitted}}
-If an account exists with that email address, you should receive an email with instructions on how to reset your password soon. Be sure to check your junk.
-{{else}}
-<form action="/forgot" method="POST">
-  <div class="form-group">
-    <label for="email">Email address</label>
-    <input name="email" type="email" class="form-control" id="email" aria-describedby="emailHelp" placeholder="Enter email" {{#if email}}value="{{email}}"{{/if}} required>
-    <small id="emailHelp" class="form-text text-muted">This is the email address you used to register your account.</small>
+<div class="row px-2 py-4 p-md-5">
+  <div class="col-12 px-2 py-4 p-md-5 bg-light rounded shadow">
+    <h3>Reset Your Password</h3>
+    {{#each messages}}
+    <div class="alert alert-danger" role="alert">
+      {{this}}
+    </div>
+    {{/each}}
+    {{#each errors}}
+    <div class="alert alert-danger" role="alert">
+      {{msg}}
+    </div>
+    {{/each}}
+    {{#if submitted}}
+    <p>If an account exists with that email address, you should receive an email with instructions on how to reset your password soon.</p>
+    <small>Not seeing the email? Be sure to check your Spam/Junk folder.</small>
+    <lead class="form-text text-muted"> Back to <a href="/login">Login</a></lead>
+    {{else}}
+    <form action="/forgot" method="POST">
+      <div class="form-group">
+        <label for="email">Email address</label>
+        <input name="email" type="email" class="form-control" id="email" aria-describedby="emailHelp" placeholder="Enter email" {{#if email}}value="{{email}}"{{/if}} required>
+        <small id="emailHelp" class="form-text text-muted">This is the email address you used to register your account.</small>
+      </div>
+      <button type="submit" class="btn btn-primary">Login</button>
+    </form>
+    <small class="form-text text-muted"> Not Registered? <a href="/register">Register Now</a></small>
+    <small class="form-text text-muted"> Remembered your password? <a href="/login">Login</a></small>
+    {{/if}}
   </div>
-  <button type="submit" class="btn btn-primary">Login</button>
-</form>
-<small class="form-text text-muted"> Not Registered? <a href="/register">Register Now</a></small>
-<small class="form-text text-muted"> Remembered your password? <a href="/login">Login</a></small>
-{{/if}}
+</div>
+

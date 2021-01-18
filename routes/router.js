@@ -13,7 +13,16 @@ const router = express.Router();
 
 /* Home page. */
 router.get('/', checkAuthenticated, function(req, res, next) {
-  res.render('index', { title: '', fname: req.user.fname });
+  res.render('index', { title: 'Home', user: req.user});
+});
+
+/* Change Password */
+router.get('/changepassword', function(req, res, next){
+  res.redirect('/');
+});
+
+router.post('/changepassword', checkAuthenticated, function(req, res, next){
+  res.redirect('/');
 });
 
 /* Login Page */
