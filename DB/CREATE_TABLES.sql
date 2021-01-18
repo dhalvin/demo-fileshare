@@ -13,7 +13,7 @@ CREATE TABLE User (
     lname VARCHAR(255) NOT NULL,
     regdate BIGINT NOT NULL,
     isadmin TINYINT(1) NOT NULL DEFAULT 0,
-    loginattempts TINYINT,
+    loginattempts TINYINT NOT NULL DEFAULT 0,
     lastlogin INT UNSIGNED,
     PRIMARY KEY (id),
     FOREIGN KEY (orgid) REFERENCES Organization(id)
@@ -31,6 +31,7 @@ CREATE TABLE Login (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     userid INT UNSIGNED NOT NULL,
     attempttime BIGINT NOT NULL,
+    -- 0 = FAIL, 1 = SUCCESS
     status TINYINT NOT NULL,
     PRIMARY KEY (id),
     FOREIGN KEY (userid) REFERENCES User(id)

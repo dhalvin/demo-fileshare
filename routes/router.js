@@ -5,7 +5,7 @@ const mysql = require('../db-config');
 
 const passport = require('passport');
 const initializePassport = require('../passport-config');
-initializePassport(passport, getUserFromEmail, getUserFromId);
+initializePassport(passport, getUserFromEmail, getUserFromId, logLoginAttempt);
 
 const validator = require('express-validator');
 
@@ -185,7 +185,7 @@ function gatherSessionVariables(responseObect, req){
 
 async function getUserFromEmail(email){
   return new Promise(function(resolve, reject){
-    mysql.query('SELECT id, fname, lname, email, password, orgid FROM User WHERE email = ?', [email],
+    mysql.query('SELECT User.id, fname, lname, email, password, orgid, loginattempts, attempttime FROM User LEFT JOIN Login ON User.lastlogin=Login.id WHERE email = ?', [email],
     function(error, results, fields){
       if(!error){
         if(results.length > 0){
@@ -195,7 +195,9 @@ async function getUserFromEmail(email){
           lname: results[0].lname,
           email: results[0].email,
           password: results[0].password.toString(),
-          orgid: results[0].orgid});
+          orgid: results[0].orgid,
+          loginattempts: results[0].loginattempts,
+          attempttime: results[0].attempttime});
         }
         else{
           resolve(null);
@@ -212,21 +214,23 @@ async function getUserFromEmail(email){
 
 async function getUserFromId(id){
   return new Promise(function(resolve, reject){
-    mysql.query('SELECT id, fname, lname, email, password, orgid FROM User WHERE id = ?', [id],
+    mysql.query('SELECT User.id, fname, lname, email, password, orgid, loginattempts, attempttime FROM User LEFT JOIN Login ON User.lastlogin=Login.id WHERE User.id = ?', [id],
     function(error, results, fields){
       if(!error){
         if(results.length > 0){
-          resolve({
-            id: results[0].id,
-            fname: results[0].fname,
-            lname: results[0].lname,
-            email: results[0].email,
-            password: results[0].password.toString(),
-            orgid: results[0].orgid});
-          }
-          else{
-            resolve(null);
-          }
+        resolve({
+          id: results[0].id,
+          fname: results[0].fname,
+          lname: results[0].lname,
+          email: results[0].email,
+          password: results[0].password.toString(),
+          orgid: results[0].orgid,
+          loginattempts: results[0].loginattempts,
+          attempttime: results[0].attempttime});
+        }
+        else{
+          resolve(null);
+        }
       }
       else{
         logger.error(error);
@@ -235,5 +239,17 @@ async function getUserFromId(id){
       }
     });
   });
+}
+
+function logLoginAttempt(userid, status, firstFail=false){
+  mysql.query('INSERT INTO Login (userid, attempttime, status) VALUES (?, ?, ?)', [userid, Date.now(), status],
+    function(error, results, fields){
+      if(error) throw error;
+      mysql.query('UPDATE User SET lastlogin = ?, loginattempts = '+ (status ? '0' : ( firstFail ? '1' : '`loginattempts` + 1')) +' WHERE id = ?', [results.insertId, userid],
+        function(error, results, fields){
+          if(error) throw error;
+        });
+    });
+  
 }
 module.exports = router;
