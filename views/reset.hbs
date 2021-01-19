@@ -1,0 +1,35 @@
+
+<div class="row px-2 py-4 p-md-5">
+  <div class="col-12 px-2 py-4 p-md-5 bg-light rounded shadow">
+    <h3>Reset Your Password</h3>
+    {{#each messages}}
+    <div class="alert alert-danger" role="alert">
+      {{this}}
+    </div>
+    {{/each}}
+    {{#each errors}}
+    <div class="alert alert-danger" role="alert">
+      {{msg}}
+    </div>
+    {{/each}}
+    <h4>Hi {{user.fname}} - {{user.org}}</h4>
+    <form action="/reset" method="POST">
+      <small id="passwordReqs" class="form-text text-muted">Your password must be between 14 and 32 characters long and contain at least 1 of each of the following: uppercase letters, lowercase letters, numbers, and symbols.</small>
+      <div class="form-group row">
+        <label for="newpass" class="col-sm-2 col-form-label">New Password</label>
+        <div class="col-sm-10">
+          <input name="newpass" type="password" class="form-control" id="newpass" placeholder="New Password" required>
+        </div>
+      </div>
+      <div class="form-group row">
+        <label for="passconf" class="col-sm-2 col-form-label">Confirm New Password</label>
+        <div class="col-sm-10">
+          <input name="passconf" type="password" class="form-control" id="passconf" placeholder="Confirm New Password" required>
+        </div>
+      </div>
+      <button type="submit" id="resetpassword" class="btn btn-primary">Reset Password</button>
+    </form>
+    <small class="form-text text-muted"> Remembered your password? <a href="/login">Login</a></small>
+  </div>
+</div>
+

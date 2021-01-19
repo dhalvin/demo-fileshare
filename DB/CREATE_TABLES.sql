@@ -7,6 +7,7 @@ USE hasfs;
 CREATE TABLE User (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     email VARCHAR(254) NOT NULL,
+    emailverified TINYINT(1) NOT NULL DEFAULT 0,
     password BINARY(60) NOT NULL,
     orgid INT UNSIGNED NOT NULL,
     fname VARCHAR(255) NOT NULL,

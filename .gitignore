@@ -62,3 +62,5 @@ typings/
 
 # vscode launch config
 .vscode
+
+gsuite_nodemailer.json

@@ -8,8 +8,33 @@ const initializePassport = require('../passport-config');
 initializePassport(passport, getUserFromEmail, getUserFromId, logLoginAttempt);
 
 const validator = require('express-validator');
-
+const nodemail = require('../email-config');
+const jwt = require('jsonwebtoken');
 const router = express.Router();
+
+/* Confirm Email */
+router.get('/confirm/:token', checkNotAuthenticated, async function(req, res, next){
+  var token = req.params.token;
+  var decodedId = jwt.decode(token);
+  var user = await getUserFromId(decodedId);
+  jwt.verify(token, user.email+'-'+user.regdate, function(error, decoded){
+    if(!error){
+      mysql.query('UPDATE User SET emailverified = ? WHERE id = ?', [1, user.id]);
+      req.session.successalert = {strong: "Success!", msg: "You've successfully confirmed your email address. Sign in to proceed!"};
+      req.fields = {email: user.email};
+      res.redirect('/login');
+    }
+    else{
+      req.session.messages = ['Bad URL. Something is wrong.']
+      res.redirect('/login');
+    }
+  });
+});
+
+/* Reset Password */
+router.get('/reset', checkNotAuthenticated, function(req, res, next) {
+  res.render('reset', { title: 'Reset Password', user: {fname: 'David', org: 'Test Org'}});
+});
 
 /* Home page. */
 router.get('/', checkAuthenticated, function(req, res, next) {
@@ -74,14 +99,19 @@ router.post('/register',
       const hashedPassword = await bcrypt.hash(req.body.password, 10);
       mysql.query('INSERT INTO User (fname, lname, orgid, email, password, regdate) VALUES (?, ?, ?, ?, ?, ?)', [req.body.fname, req.body.lname, 1, req.body.email, hashedPassword, Date.now()],
         function(error, result, fields){
-        if(!error){
-          res.redirect('/login');
-        }
-        else{
-          logger.error(error);
-          req.session.messages = ["Something went wrong, please try again."];
-          res.redirect('/register');
-        }
+          if(!error){
+            jwt.sign(result.insertId.toString(), req.body.email + '-' + req.body.regdate, function(sign_error, token){
+              if(sign_error) throw sign_error;
+              nodemail.sendMail(res, 'email_confirm', {title: 'Confirm your email', subject: 'Confirm your email', user: {fname: req.body.fname, lname: req.body.lname, email: req.body.email}, token:'https://files.hanessassociates.com/confirm/'+token}, req.body.email);
+              req.session.successalert = {strong: 'Success!', msg: 'Your account has been registered. An email has been sent to ' + req.body.email + '. Please follow the link in the email to confirm your email address. (Check your spam folder)'};
+              res.redirect('/login');
+            });
+          }
+          else{
+            logger.error(error);
+            req.session.messages = ["Something went wrong, please try again."];
+            res.redirect('/register');
+          }
       });
     } catch {
       res.redirect('/register');
@@ -176,25 +206,29 @@ function checkEmailNotUsed(req, res, next){
   }catch{}
 }
 
-function gatherSessionVariables(responseObect, req){
+function gatherSessionVariables(responseObject, req){
   if('messages' in req.session){
-    responseObect.messages = req.session.messages;
+    responseObject.messages = req.session.messages;
     delete req.session.messages;
   }
   if('errors' in req.session){
-    responseObect.errors = JSON.parse(req.session.errors);
+    responseObject.errors = JSON.parse(req.session.errors);
     delete req.session.errors;
   }
   if('fields' in req.session){
     const fields = JSON.parse(req.session.fields);
-    Object.assign(responseObect, fields);
+    Object.assign(responseObject, fields);
     delete req.session.fields;
+  }
+  if('successalert' in req.session){
+    responseObject.successalert = req.session.successalert;
+    delete req.session.successalert;
   }
 }
 
 async function getUserFromEmail(email){
   return new Promise(function(resolve, reject){
-    mysql.query('SELECT User.id, fname, lname, email, password, orgid, loginattempts, attempttime FROM User LEFT JOIN Login ON User.lastlogin=Login.id WHERE email = ?', [email],
+    mysql.query('SELECT User.id, fname, lname, email, emailverified, password, orgid, loginattempts, attempttime FROM User LEFT JOIN Login ON User.lastlogin=Login.id WHERE email = ?', [email],
     function(error, results, fields){
       if(!error){
         if(results.length > 0){
@@ -203,6 +237,7 @@ async function getUserFromEmail(email){
           fname: results[0].fname,
           lname: results[0].lname,
           email: results[0].email,
+          verified: results[0].emailverified,
           password: results[0].password.toString(),
           orgid: results[0].orgid,
           loginattempts: results[0].loginattempts,
@@ -223,7 +258,7 @@ async function getUserFromEmail(email){
 
 async function getUserFromId(id){
   return new Promise(function(resolve, reject){
-    mysql.query('SELECT User.id, fname, lname, email, password, orgid, loginattempts, attempttime FROM User LEFT JOIN Login ON User.lastlogin=Login.id WHERE User.id = ?', [id],
+    mysql.query('SELECT User.id, fname, lname, email, emailverified, password, orgid, loginattempts, attempttime FROM User LEFT JOIN Login ON User.lastlogin=Login.id WHERE User.id = ?', [id],
     function(error, results, fields){
       if(!error){
         if(results.length > 0){
@@ -232,6 +267,7 @@ async function getUserFromId(id){
           fname: results[0].fname,
           lname: results[0].lname,
           email: results[0].email,
+          verified: results[0].emailverified,
           password: results[0].password.toString(),
           orgid: results[0].orgid,
           loginattempts: results[0].loginattempts,

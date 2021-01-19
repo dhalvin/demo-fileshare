@@ -2,6 +2,14 @@
 <div class="row px-2 py-4 p-md-5">
   <div class="col-12 px-2 py-4 p-md-5 bg-light rounded shadow">
     <h3>Login to Continue</h3>
+    {{#if successalert}}
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+      <strong>{{successalert.strong}}</strong> {{successalert.msg}}
+      <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+    {{/if}}
     {{#each messages}}
     <div class="alert alert-danger" role="alert">
       {{this}}

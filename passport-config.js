@@ -16,7 +16,13 @@ function initialize(passport, getUserByEmail, getUserById, logLoginAttempt) {
         if (await bcrypt.compare(password, user.password)) {
           //User has successfully logged in
           logLoginAttempt(user.id, 1);
-          return done(null, user);
+          if(user.verified){
+            return done(null, user);
+          }
+          else{
+            return done(null, false, { message: 'You must confirm your email address to proceed. Please check your inbox. (And your spam folder)'});
+          }
+          
         }
         else {
           //First incorrect attempt
@@ -31,7 +37,12 @@ function initialize(passport, getUserByEmail, getUserById, logLoginAttempt) {
           if (await bcrypt.compare(password, user.password)) {
             //User has successfully logged in
             logLoginAttempt(user.id, 1);
-            return done(null, user);
+            if(user.verified){
+              return done(null, user);
+            }
+            else{
+              return done(null, false, { message: 'You must confirm your email address to proceed. Please check your inbox. (And your spam folder)'});
+            }
           }
           else {
             //User entered incorrect password
