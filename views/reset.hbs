@@ -13,7 +13,7 @@
     </div>
     {{/each}}
     <h4>Hi {{user.fname}} - {{user.org}}</h4>
-    <form action="/reset" method="POST">
+    <form action="/reset/{{token}}" method="POST">
       <small id="passwordReqs" class="form-text text-muted">Your password must be between 14 and 32 characters long and contain at least 1 of each of the following: uppercase letters, lowercase letters, numbers, and symbols.</small>
       <div class="form-group row">
         <label for="newpass" class="col-sm-2 col-form-label">New Password</label>

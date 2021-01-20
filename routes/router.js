@@ -12,30 +12,6 @@ const nodemail = require('../email-config');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
 
-/* Confirm Email */
-router.get('/confirm/:token', checkNotAuthenticated, async function(req, res, next){
-  var token = req.params.token;
-  var decodedId = jwt.decode(token);
-  var user = await getUserFromId(decodedId);
-  jwt.verify(token, user.email+'-'+user.regdate, function(error, decoded){
-    if(!error){
-      mysql.query('UPDATE User SET emailverified = ? WHERE id = ?', [1, user.id]);
-      req.session.successalert = {strong: "Success!", msg: "You've successfully confirmed your email address. Sign in to proceed!"};
-      req.fields = {email: user.email};
-      res.redirect('/login');
-    }
-    else{
-      req.session.messages = ['Bad URL. Something is wrong.']
-      res.redirect('/login');
-    }
-  });
-});
-
-/* Reset Password */
-router.get('/reset', checkNotAuthenticated, function(req, res, next) {
-  res.render('reset', { title: 'Reset Password', user: {fname: 'David', org: 'Test Org'}});
-});
-
 /* Home page. */
 router.get('/', checkAuthenticated, function(req, res, next) {
   res.render('index', { title: 'Home', user: req.user});
@@ -97,10 +73,11 @@ router.post('/register',
       //Check org code is good
       //Create user in DB
       const hashedPassword = await bcrypt.hash(req.body.password, 10);
-      mysql.query('INSERT INTO User (fname, lname, orgid, email, password, regdate) VALUES (?, ?, ?, ?, ?, ?)', [req.body.fname, req.body.lname, 1, req.body.email, hashedPassword, Date.now()],
+      var regdate = Date.now();
+      mysql.query('INSERT INTO User (fname, lname, orgid, email, password, regdate) VALUES (?, ?, ?, ?, ?, ?)', [req.body.fname, req.body.lname, 1, req.body.email, hashedPassword, regdate],
         function(error, result, fields){
           if(!error){
-            jwt.sign(result.insertId.toString(), req.body.email + '-' + req.body.regdate, function(sign_error, token){
+            jwt.sign({data: result.insertId.toString()}, req.body.email + '-' + regdate, function(sign_error, token){
               if(sign_error) throw sign_error;
               nodemail.sendMail(res, 'email_confirm', {title: 'Confirm your email', subject: 'Confirm your email', user: {fname: req.body.fname, lname: req.body.lname, email: req.body.email}, token:'https://files.hanessassociates.com/confirm/'+token}, req.body.email);
               req.session.successalert = {strong: 'Success!', msg: 'Your account has been registered. An email has been sent to ' + req.body.email + '. Please follow the link in the email to confirm your email address. (Check your spam folder)'};
@@ -130,11 +107,71 @@ router.post('/forgot',
   captureUserInput, 
   validator.check('email', 'Please enter a valid email address').isEmail().normalizeEmail(),
   collectValidationErrors('/forgot'),
-function(req, res, next){
-  var fields = JSON.parse(req.session.fields);
-  fields.submitted = true;
-  req.session.fields = JSON.stringify(fields);
+async function(req, res, next){
+  var user = await getUserFromEmail(req.body.email);
+  if(user){
+    jwt.sign({data: user.id.toString(), exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24)}, user.password + '-' + user.regdate, function(sign_error, token){
+      if(sign_error) throw sign_error;
+      nodemail.sendMail(res, 'email_resetpassword', {title: 'Reset your password', subject: 'Reset your password', user: user, token:'https://files.hanessassociates.com/reset/'+token}, user.email);
+    });
+  }
+  if(req.session.fields){
+    req.session.fields.submitted = true;
+  }
+  else{
+    req.session.fields = {submitted: true};
+  }
   res.redirect('/forgot');
+});
+
+/* Confirm Email */
+router.get('/confirm/:token',
+  checkNotAuthenticated,
+  verifyToken('/login', 'email'),
+  async function(req, res, next){
+    var user = res.locals.user;
+    mysql.query('UPDATE User SET emailverified = ? WHERE id = ?', [1, user.id]);
+    req.session.successalert = {strong: "Success!", msg: "You've successfully confirmed your email address. Login to proceed!"};
+    if(req.session.fields){
+      req.session.fields.email = user.email;
+    }
+    else{
+      req.session.fields = {email: user.email};
+    }
+    res.redirect('/login');
+  }
+);
+
+/* Reset Password */
+router.get('/reset/:token',
+  checkNotAuthenticated,
+  verifyToken('/login', 'password'),
+  function(req, res, next) {
+    var token = req.params.token;
+    const response = { title: 'Reset Password', token: token, user: res.locals.user};
+    gatherSessionVariables(response, req);
+    res.render('reset', response);
+  }
+);
+
+router.post('/reset/:token',
+  checkNotAuthenticated,
+  verifyToken('/login', 'password'),
+  validator.check('newpass', 'Password must be between 14 and 32 characters').isLength({min:14, max:32}).bail().isStrongPassword({ minLength: 14 }).withMessage('Password is not strong enough. Please check password requirements.'),
+  validator.check('passconf').custom(validateFieldMatch('newpass', 'Passwords do not match')),
+  collectValidationErrors('/reset', {param: 'token'}),
+  async function(req, res, next) {
+    var user = res.locals.user;
+    const hashedPassword = await bcrypt.hash(req.body.newpass, 10);
+    mysql.query('UPDATE User SET password = ? WHERE id = ?', [hashedPassword, user.id]);
+    req.session.successalert = {strong: "Success!", msg: "You've successfully reset your password. Login to proceed!"};
+    if(req.session.fields){
+      req.session.fields.email = user.email;
+    }
+    else{
+      req.session.fields = {email: user.email};
+    }
+    res.redirect('/login');
 });
 
 /* Logout */
@@ -167,16 +204,21 @@ function captureUserInput(req, res, next){
   for(field in req.body){
     fields[field] = req.body[field];
   }
-  req.session.fields = JSON.stringify(fields);
+  if(req.session.fields){
+    Object.assign(req.session.fields, fields);
+  }
+  else{
+    req.session.fields = fields;
+  }
   next();
 }
 
-function collectValidationErrors(redirect){
+function collectValidationErrors(redirect, options={}){
   return function(req, res, next){
     const errors = validator.validationResult(req);
     if(!errors.isEmpty()){
       req.session.errors = JSON.stringify(errors.array());
-      res.redirect(redirect);
+      res.redirect(redirect + (options.param ? '/'+req.params[options.param] : ''));
     }
     else{
       next();
@@ -216,8 +258,7 @@ function gatherSessionVariables(responseObject, req){
     delete req.session.errors;
   }
   if('fields' in req.session){
-    const fields = JSON.parse(req.session.fields);
-    Object.assign(responseObject, fields);
+    Object.assign(responseObject, req.session.fields);
     delete req.session.fields;
   }
   if('successalert' in req.session){
@@ -228,7 +269,7 @@ function gatherSessionVariables(responseObject, req){
 
 async function getUserFromEmail(email){
   return new Promise(function(resolve, reject){
-    mysql.query('SELECT User.id, fname, lname, email, emailverified, password, orgid, loginattempts, attempttime FROM User LEFT JOIN Login ON User.lastlogin=Login.id WHERE email = ?', [email],
+    mysql.query('SELECT User.id, fname, lname, email, emailverified, password, orgid, loginattempts, attempttime, regdate FROM User LEFT JOIN Login ON User.lastlogin=Login.id WHERE email = ?', [email],
     function(error, results, fields){
       if(!error){
         if(results.length > 0){
@@ -241,7 +282,8 @@ async function getUserFromEmail(email){
           password: results[0].password.toString(),
           orgid: results[0].orgid,
           loginattempts: results[0].loginattempts,
-          attempttime: results[0].attempttime});
+          attempttime: results[0].attempttime,
+          regdate: results[0].regdate});
         }
         else{
           resolve(null);
@@ -258,7 +300,7 @@ async function getUserFromEmail(email){
 
 async function getUserFromId(id){
   return new Promise(function(resolve, reject){
-    mysql.query('SELECT User.id, fname, lname, email, emailverified, password, orgid, loginattempts, attempttime FROM User LEFT JOIN Login ON User.lastlogin=Login.id WHERE User.id = ?', [id],
+    mysql.query('SELECT User.id, fname, lname, email, emailverified, password, orgid, loginattempts, attempttime,regdate FROM User LEFT JOIN Login ON User.lastlogin=Login.id WHERE User.id = ?', [id],
     function(error, results, fields){
       if(!error){
         if(results.length > 0){
@@ -271,7 +313,8 @@ async function getUserFromId(id){
           password: results[0].password.toString(),
           orgid: results[0].orgid,
           loginattempts: results[0].loginattempts,
-          attempttime: results[0].attempttime});
+          attempttime: results[0].attempttime,
+          regdate: results[0].regdate});
         }
         else{
           resolve(null);
@@ -296,5 +339,38 @@ function logLoginAttempt(userid, status, firstFail=false){
         });
     });
   
+}
+
+function validateFieldMatch(otherField, msg){
+  return function(value, { req }){
+    if(value !== req.body[otherField]){
+      throw new Error(msg);
+    }
+    return true;
+  };
+};
+
+function verifyToken(redirect, secretSauce){
+  return async function(req, res, next){ 
+    try{
+      var token = req.params.token;
+      var decodedId = jwt.decode(token).data;
+      var user = await getUserFromId(decodedId);
+      res.locals.user = user;
+      jwt.verify(token, user[secretSauce]+'-'+user.regdate, function(error, decoded){
+        if(!error){
+          return next();
+        }
+        else{
+          req.session.messages = ['Bad URL. Something is wrong.']
+          res.redirect(redirect);
+        }
+      });
+    }catch(err){
+      logger.error(err);
+      req.session.messages = ['Bad URL. Something is wrong.']
+      res.redirect(redirect);
+    }
+  }
 }
 module.exports = router;
