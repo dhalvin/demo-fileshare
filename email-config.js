@@ -1,4 +1,3 @@
-const { response } = require('express');
 const nodemailer = require('nodemailer');
 const logger = require('./logger');
 const SENDER_ADDRESS = 'admin@hanessassociates.com';
