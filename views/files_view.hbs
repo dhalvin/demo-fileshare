@@ -1,0 +1,21 @@
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb mb-0">
+    <li class="breadcrumb-item {{#unless org}}active{{/unless}}">Root</li>
+    {{#if org}}<li class="breadcrumb-item {{#unless year}}active{{/unless}}">{{org}}</li>{{/if}}
+    {{#if year}}<li class="breadcrumb-item {{#unless plan}}active{{/unless}}">{{year}}</li>{{/if}}
+    {{#if plan}}<li class="breadcrumb-item active">{{plan}}</li>{{/if}}
+  </ol>
+</nav>
+<div class="list-group list-group-flush">
+  {{#if back}}
+  <button type="button" class="list-group-item list-group-item-action" onclick="requestFiles(this)" prefix="{{this.back}}">..back</button>
+  {{/if}}
+  {{#each dirs}}
+  <button type="button" class="list-group-item list-group-item-action" onclick="requestFiles(this)" prefix="{{this.Prefix}}">{{this.displayName}}</button>
+  {{/each}}
+  {{#each files}}
+  {{#if this.Size}}
+  <button type="button" class="list-group-item list-group-item-action" disabled>{{this.displayName}}</button>
+  {{/if}}
+  {{/each}}
+</div>

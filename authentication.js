@@ -47,9 +47,18 @@ function checkNotAuthenticatedAjax(req, res, next) {
   }
 }
 
+function checkOrgAuthorized(req, res, next) {
+  if (req.user.org === req.params.org) {
+    next();
+  }
+  else {
+    res.json(JSON.stringify({err: 'Invalid Authentication', data: null}));
+  }
+}
+
 async function getUserFromEmail(email) {
   return new Promise(function (resolve, reject) {
-    mysql.query('SELECT User.id, fname, lname, email, emailverified, password, orgid, loginattempts, attempttime, regdate FROM User LEFT JOIN Login ON User.lastlogin=Login.id WHERE email = ?', [email],
+    mysql.query('SELECT User.id, fname, lname, email, emailverified, password, orgid, Organization.name as orgname, loginattempts, attempttime, regdate FROM User LEFT JOIN Login ON User.lastlogin=Login.id LEFT JOIN Organization on User.orgid=Organization.id WHERE email = ?', [email],
       function (error, results, fields) {
         if (!error) {
           if (results.length > 0) {
@@ -61,6 +70,7 @@ async function getUserFromEmail(email) {
               verified: results[0].emailverified,
               password: results[0].password.toString(),
               orgid: results[0].orgid,
+              org: results[0].orgname,
               loginattempts: results[0].loginattempts,
               attempttime: results[0].attempttime,
               regdate: results[0].regdate
@@ -81,7 +91,7 @@ async function getUserFromEmail(email) {
 
 async function getUserFromId(id) {
   return new Promise(function (resolve, reject) {
-    mysql.query('SELECT User.id, fname, lname, email, emailverified, password, orgid, loginattempts, attempttime,regdate FROM User LEFT JOIN Login ON User.lastlogin=Login.id WHERE User.id = ?', [id],
+    mysql.query('SELECT User.id, fname, lname, email, emailverified, password, orgid, Organization.name as orgname, loginattempts, attempttime,regdate FROM User LEFT JOIN Login ON User.lastlogin=Login.id LEFT JOIN Organization on User.orgid=Organization.id WHERE User.id = ?', [id],
       function (error, results, fields) {
         if (!error) {
           if (results.length > 0) {
@@ -93,6 +103,7 @@ async function getUserFromId(id) {
               verified: results[0].emailverified,
               password: results[0].password.toString(),
               orgid: results[0].orgid,
+              org: results[0].orgname,
               loginattempts: results[0].loginattempts,
               attempttime: results[0].attempttime,
               regdate: results[0].regdate
@@ -133,5 +144,6 @@ module.exports = {
   checkNotAuthenticatedAjax: checkNotAuthenticatedAjax,
   getUserFromEmail: getUserFromEmail,
   getUserFromId: getUserFromId,
-  logLoginAttempt: logLoginAttempt
+  logLoginAttempt: logLoginAttempt,
+  checkOrgAuthorized: checkOrgAuthorized
 }

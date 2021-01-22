@@ -8,9 +8,15 @@ const nodemail = require('../email-config');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
 
+/* For Testing */
+router.get('/test', function(req, res, next){
+  res.render('test', {title: 'Test', scripts: ['test']});
+});
+
 /* Home page. */
 router.get('/', auth.checkAuthenticated, function(req, res, next) {
-  res.render('index', { title: 'Home', user: req.user});
+  //var awsResponse = await aws.listOrganizations(req.user.org);
+  res.render('index', { title: 'Home', user: req.user, scripts: ['files']});
 });
 
 /* Change Password */
