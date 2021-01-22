@@ -2,18 +2,14 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const logger = require('../logger');
 const mysql = require('../db-config');
-
-const passport = require('passport');
-const initializePassport = require('../passport-config');
-initializePassport(passport, getUserFromEmail, getUserFromId, logLoginAttempt);
-
+const auth = require('../authentication');
 const validator = require('express-validator');
 const nodemail = require('../email-config');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
 
 /* Home page. */
-router.get('/', checkAuthenticated, function(req, res, next) {
+router.get('/', auth.checkAuthenticated, function(req, res, next) {
   res.render('index', { title: 'Home', user: req.user});
 });
 
@@ -22,37 +18,33 @@ router.get('/changepassword', function(req, res, next){
   res.redirect('/');
 });
 
-router.post('/changepassword', checkAuthenticated, function(req, res, next){
+router.post('/changepassword', auth.checkAuthenticated, function(req, res, next){
   res.redirect('/');
 });
 
 /* Login Page */
-router.get('/login', checkNotAuthenticated, function(req, res, next) {
+router.get('/login', auth.checkNotAuthenticated, function(req, res, next) {
   const response = {title: 'Login'};
   gatherSessionVariables(response, req);
   res.render('login', response);
 });
 
 router.post('/login',
-  checkNotAuthenticated,
+  auth.checkNotAuthenticated,
   captureUserInput,
   validator.check('email', 'Please enter a valid email address').isEmail().normalizeEmail(),
   collectValidationErrors('/login'),
-  passport.authenticate('local', {
-    successRedirect: '/',
-    failureRedirect: '/login',
-    failureMessage: true
-  }));
+  auth.authenticate());
 
 /* Register Page */
-router.get('/register', checkNotAuthenticated, function(req, res, next) {
+router.get('/register', auth.checkNotAuthenticated, function(req, res, next) {
   const response = {title: 'Register'};
   gatherSessionVariables(response, req);
   res.render('register', response);
 });
 
 router.post('/register', 
-  checkNotAuthenticated, 
+  auth.checkNotAuthenticated, 
   captureUserInput,
   validator.check('fname').trim().notEmpty().withMessage("First name cannot be empty"),
   validator.check('lname').trim().notEmpty().withMessage("Last name cannot be empty"),
@@ -96,19 +88,19 @@ router.post('/register',
 });
 
 /* Forgot Password Page */
-router.get('/forgot', checkNotAuthenticated, function(req, res, next){
+router.get('/forgot', auth.checkNotAuthenticated, function(req, res, next){
   const response = {title: 'Forgot Password'};
   gatherSessionVariables(response, req);
   res.render('forgot', response);
 });
 
 router.post('/forgot',
-  checkNotAuthenticated,
+  auth.checkNotAuthenticated,
   captureUserInput, 
   validator.check('email', 'Please enter a valid email address').isEmail().normalizeEmail(),
   collectValidationErrors('/forgot'),
 async function(req, res, next){
-  var user = await getUserFromEmail(req.body.email);
+  var user = await auth.getUserFromEmail(req.body.email);
   if(user){
     jwt.sign({data: user.id.toString(), exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24)}, user.password + '-' + user.regdate, function(sign_error, token){
       if(sign_error) throw sign_error;
@@ -126,7 +118,7 @@ async function(req, res, next){
 
 /* Confirm Email */
 router.get('/confirm/:token',
-  checkNotAuthenticated,
+  auth.checkNotAuthenticated,
   verifyToken('/login', 'email'),
   async function(req, res, next){
     var user = res.locals.user;
@@ -144,7 +136,7 @@ router.get('/confirm/:token',
 
 /* Reset Password */
 router.get('/reset/:token',
-  checkNotAuthenticated,
+  auth.checkNotAuthenticated,
   verifyToken('/login', 'password'),
   function(req, res, next) {
     var token = req.params.token;
@@ -155,7 +147,7 @@ router.get('/reset/:token',
 );
 
 router.post('/reset/:token',
-  checkNotAuthenticated,
+  auth.checkNotAuthenticated,
   verifyToken('/login', 'password'),
   validator.check('newpass', 'Password must be between 14 and 32 characters').isLength({min:14, max:32}).bail().isStrongPassword({ minLength: 14 }).withMessage('Password is not strong enough. Please check password requirements.'),
   validator.check('passconf').custom(validateFieldMatch('newpass', 'Passwords do not match')),
@@ -179,24 +171,6 @@ router.delete('/logout', function(req, res){
   req.logOut();
   res.redirect('/login');
 });
-
-function checkAuthenticated(req, res, next) {
-  if(req.isAuthenticated()) {
-    next();
-  }
-  else{
-    res.redirect('/login');
-  }
-}
-
-function checkNotAuthenticated(req, res, next){
-  if(req.isAuthenticated()){
-    res.redirect('/');
-  }
-  else{
-    next();
-  }
-}
 
 /*Save user input to session so forms can be repopulated in the event of an error*/
 function captureUserInput(req, res, next){
@@ -267,80 +241,6 @@ function gatherSessionVariables(responseObject, req){
   }
 }
 
-async function getUserFromEmail(email){
-  return new Promise(function(resolve, reject){
-    mysql.query('SELECT User.id, fname, lname, email, emailverified, password, orgid, loginattempts, attempttime, regdate FROM User LEFT JOIN Login ON User.lastlogin=Login.id WHERE email = ?', [email],
-    function(error, results, fields){
-      if(!error){
-        if(results.length > 0){
-        resolve({
-          id: results[0].id,
-          fname: results[0].fname,
-          lname: results[0].lname,
-          email: results[0].email,
-          verified: results[0].emailverified,
-          password: results[0].password.toString(),
-          orgid: results[0].orgid,
-          loginattempts: results[0].loginattempts,
-          attempttime: results[0].attempttime,
-          regdate: results[0].regdate});
-        }
-        else{
-          resolve(null);
-        }
-      }
-      else{
-        logger.error(error);
-        req.session.messages = ["Something went wrong, please try again."];
-        resolve(null);
-      }
-    });
-  });
-}
-
-async function getUserFromId(id){
-  return new Promise(function(resolve, reject){
-    mysql.query('SELECT User.id, fname, lname, email, emailverified, password, orgid, loginattempts, attempttime,regdate FROM User LEFT JOIN Login ON User.lastlogin=Login.id WHERE User.id = ?', [id],
-    function(error, results, fields){
-      if(!error){
-        if(results.length > 0){
-        resolve({
-          id: results[0].id,
-          fname: results[0].fname,
-          lname: results[0].lname,
-          email: results[0].email,
-          verified: results[0].emailverified,
-          password: results[0].password.toString(),
-          orgid: results[0].orgid,
-          loginattempts: results[0].loginattempts,
-          attempttime: results[0].attempttime,
-          regdate: results[0].regdate});
-        }
-        else{
-          resolve(null);
-        }
-      }
-      else{
-        logger.error(error);
-        req.session.messages = ["Something went wrong, please try again."];
-        resolve(null);
-      }
-    });
-  });
-}
-
-function logLoginAttempt(userid, status, firstFail=false){
-  mysql.query('INSERT INTO Login (userid, attempttime, status) VALUES (?, ?, ?)', [userid, Date.now(), status],
-    function(error, results, fields){
-      if(error) throw error;
-      mysql.query('UPDATE User SET lastlogin = ?, loginattempts = '+ (status ? '0' : ( firstFail ? '1' : '`loginattempts` + 1')) +' WHERE id = ?', [results.insertId, userid],
-        function(error, results, fields){
-          if(error) throw error;
-        });
-    });
-  
-}
-
 function validateFieldMatch(otherField, msg){
   return function(value, { req }){
     if(value !== req.body[otherField]){
@@ -355,7 +255,7 @@ function verifyToken(redirect, secretSauce){
     try{
       var token = req.params.token;
       var decodedId = jwt.decode(token).data;
-      var user = await getUserFromId(decodedId);
+      var user = await auth.getUserFromId(decodedId);
       res.locals.user = user;
       jwt.verify(token, user[secretSauce]+'-'+user.regdate, function(error, decoded){
         if(!error){
@@ -373,4 +273,5 @@ function verifyToken(redirect, secretSauce){
     }
   }
 }
+
 module.exports = router;
