@@ -1,21 +1,49 @@
-<nav aria-label="breadcrumb">
+<nav aria-label="breadcrumb bg-primary">
   <ol class="breadcrumb mb-0">
-    <li class="breadcrumb-item {{#unless org}}active{{/unless}}">Root</li>
+    <li class="breadcrumb-item {{#unless org}}active{{/unless}}">Organizations</li>
     {{#if org}}<li class="breadcrumb-item {{#unless year}}active{{/unless}}">{{org}}</li>{{/if}}
     {{#if year}}<li class="breadcrumb-item {{#unless plan}}active{{/unless}}">{{year}}</li>{{/if}}
     {{#if plan}}<li class="breadcrumb-item active">{{plan}}</li>{{/if}}
   </ol>
 </nav>
-<div class="list-group list-group-flush">
-  {{#if back}}
-  <button type="button" class="list-group-item list-group-item-action" onclick="requestFiles(this)" prefix="{{this.back}}">..back</button>
-  {{/if}}
-  {{#each dirs}}
-  <button type="button" class="list-group-item list-group-item-action" onclick="requestFiles(this)" prefix="{{this.Prefix}}">{{this.displayName}}</button>
-  {{/each}}
-  {{#each files}}
-  {{#if this.Size}}
-  <button type="button" class="list-group-item list-group-item-action" disabled>{{this.displayName}}</button>
-  {{/if}}
-  {{/each}}
-</div>
+<table class="table table-hover" id="dirTable">
+  <thead class="table-dark">
+    <tr class="bg-primary">
+      <th scope="col">Directory</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{#if back}}
+    <tr onclick="requestFiles(this)" prefix="{{this.back}}">
+      <th scope="row">..Back</th>
+    </tr>
+    {{/if}}
+    {{#each dirs}}
+    <tr onclick="requestFiles(this)" prefix="{{this.Prefix}}">
+      <th scope="row">{{this.displayName}}</th>
+    </tr>
+    {{/each}}
+  </tbody>
+</table>
+<table class="table table-hover">
+  <thead class="table-dark">
+    <tr class="bg-primary">
+      <th scope="col">Filename</th>
+      <th scope="col">Size</th>
+      <th scope="col">Last Modified</th>
+      <th scope="col">Download</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{#each files}}
+    {{#if this.Size}}
+    <tr>
+      <th scope="row">{{this.displayName}}</th>
+      <td scope="row"><small class="text-muted">{{this.Size}} Bytes</small></td>
+      <td scope="row"><small class="text-muted">{{this.LastModified}}</small></td>
+      <td scope="row"><form action="/files/dl/{{this.Key}}" method="GET"><button type="submit" class="btn btn-primary">Download</button></form></td>
+    </tr>
+    {{/if}}
+    {{/each}}
+  </tbody>
+</table>

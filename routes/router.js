@@ -16,7 +16,7 @@ router.get('/test', function(req, res, next){
 /* Home page. */
 router.get('/', auth.checkAuthenticated, function(req, res, next) {
   //var awsResponse = await aws.listOrganizations(req.user.org);
-  res.render('index', { title: 'Home', user: req.user, scripts: ['files']});
+  res.render('index', { title: 'Home', user: req.user, scripts: ['files'], styles: ['index']});
 });
 
 /* Change Password */

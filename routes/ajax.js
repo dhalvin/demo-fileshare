@@ -55,6 +55,23 @@ router.get('/:org/:year/:plan', auth.checkAuthenticatedAjax, auth.checkOrgAuthor
   res.render('files_view', renderObject);
 });
 
+router.get('/dl/:org/:year/:plan/:planfile', auth.checkAuthenticatedAjax, auth.checkOrgAuthorized, async function(req, res, next){
+  var data = await aws.getFile(req.user.org +'/'+req.params.year+'/'+req.params.plan+'/'+req.params.planfile);
+  if(data){
+    res.writeHead(200, {
+      'Cache-Control': 'no-cache',
+      'Content-Disposition': 'attachment; filename=' + req.params.planfile,
+      'Content-Length': data.ContentLength,
+      'Content-Type': data.ContentType
+    });
+    res.end(data.Body);
+  }
+  else{
+    //Send error response
+    res.status(404).end();
+  }
+});
+
 function processNames(prefixKey, prefix, array){
   for(elem of array){
     elem.displayName = elem[prefixKey].replace(prefix, '');

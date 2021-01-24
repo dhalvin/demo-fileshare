@@ -44,7 +44,7 @@ function listDirContents(prefix){
         Delimiter: '/'
       };
       s3.listObjectsV2(bucketParams, function(err, data){
-        logger.info(data);
+        //logger.info(data);
         resolve(data);
       });
     }
@@ -67,6 +67,25 @@ function listPlanFiles(orgName, year, plan){
   return listDirContents(orgName + '/' + year + '/' + plan + '/');
 }
 
+function getFile(fileKey){
+  return new Promise(function(resolve, reject){
+    try{
+      var bucketParams = {
+        Bucket: bucketName,
+        Key: fileKey
+      };
+      s3.getObject(bucketParams, function(err, data){
+        logger.info(data);
+        resolve(data);
+      });
+    }
+    catch(error){
+      logger.error(error);
+      reject(error);
+    }
+  });
+}
+
 module.exports.listBuckets = listBuckets;
 module.exports.listObjects = listObjects;
 module.exports.listDirContents = listDirContents;
@@ -74,3 +93,4 @@ module.exports.listOrganizations = listOrganizations;
 module.exports.listYears = listYears;
 module.exports.listPlans = listPlans;
 module.exports.listPlanFiles = listPlanFiles;
+module.exports.getFile = getFile;
