@@ -1,0 +1,26 @@
+<h4>Manage Users</h4>
+<button class="btn btn-primary" onclick="requestUsers()">Refresh</button>
+<table class="table table-hover">
+  <thead class="table-dark">
+    <tr class="bg-primary">
+      <th scope="col">Email</th>
+      <th scope="col">Name</th>
+      <th scope="col">Registration Date</th>
+      <th scope="col">Status</th>
+      <th scope="col">Enable/Disable</th>
+      <th scope="col">Delete</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{#each users}}
+    <tr>
+      <td scope="row">{{this.email}}</td>
+      <td scope="row">{{this.name}}</td>
+      <td scope="row"><small class="text-muted">{{this.regdate}}</small></td>
+      <td scope="row">{{this.status}}</td>
+      <td scope="row"><button class="btn {{#if this.disabled}}btn-success{{/if}}{{#unless this.disabled}}btn-warning{{/unless}}">{{#if this.disabled}}Enable{{/if}}{{#unless this.disabled}}Disable{{/unless}}</button></td>
+      <td scope="row"><button class="btn btn-danger">Delete User</button></td>
+    </tr>
+    {{/each}}
+  </tbody>
+</table>

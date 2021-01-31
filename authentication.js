@@ -1,5 +1,6 @@
 const mysql = require('./db-config');
 const passport = require('passport');
+const logger = require('./logger');
 const initializePassport = require('./passport-config');
 initializePassport(passport, getUserFromEmail, getUserFromId, logLoginAttempt);
 
@@ -57,41 +58,16 @@ function checkOrgAuthorized(req, res, next) {
 }
 
 async function getUserFromEmail(email) {
-  return new Promise(function (resolve, reject) {
-    mysql.query('SELECT User.id, fname, lname, email, emailverified, password, orgid, Organization.name as orgname, loginattempts, attempttime, regdate FROM User LEFT JOIN Login ON User.lastlogin=Login.id LEFT JOIN Organization on User.orgid=Organization.id WHERE email = ?', [email],
-      function (error, results, fields) {
-        if (!error) {
-          if (results.length > 0) {
-            resolve({
-              id: results[0].id,
-              fname: results[0].fname,
-              lname: results[0].lname,
-              email: results[0].email,
-              verified: results[0].emailverified,
-              password: results[0].password.toString(),
-              orgid: results[0].orgid,
-              org: results[0].orgname,
-              loginattempts: results[0].loginattempts,
-              attempttime: results[0].attempttime,
-              regdate: results[0].regdate
-            });
-          }
-          else {
-            resolve(null);
-          }
-        }
-        else {
-          logger.error(error);
-          req.session.messages = ["Something went wrong, please try again."];
-          resolve(null);
-        }
-      });
-  });
+  return await getUserProfile('email', email);
 }
 
 async function getUserFromId(id) {
+  return await getUserProfile('id', id);
+}
+
+async function getUserProfile(key, value){
   return new Promise(function (resolve, reject) {
-    mysql.query('SELECT User.id, fname, lname, email, emailverified, password, orgid, Organization.name as orgname, loginattempts, attempttime,regdate FROM User LEFT JOIN Login ON User.lastlogin=Login.id LEFT JOIN Organization on User.orgid=Organization.id WHERE User.id = ?', [id],
+    mysql.query('SELECT User.id, fname, lname, email, emailverified, password, orgid, Organization.name as orgname, User.status, isadmin, issuperadmin, loginattempts, attempttime, regdate FROM User LEFT JOIN Login ON User.lastlogin=Login.id LEFT JOIN Organization on User.orgid=Organization.id WHERE ?? = ?', [key, value],
       function (error, results, fields) {
         if (!error) {
           if (results.length > 0) {
@@ -101,9 +77,12 @@ async function getUserFromId(id) {
               lname: results[0].lname,
               email: results[0].email,
               verified: results[0].emailverified,
-              password: results[0].password.toString(),
+              password: (results[0].password ? results[0].password.toString() : null),
               orgid: results[0].orgid,
               org: results[0].orgname,
+              status: results[0].status,
+              admin: results[0].isadmin,
+              superadmin: results[0].issuperadmin,
               loginattempts: results[0].loginattempts,
               attempttime: results[0].attempttime,
               regdate: results[0].regdate
@@ -134,6 +113,25 @@ function logLoginAttempt(userid, status, firstFail = false) {
 
 }
 
+//Assigns a new user to org based on entered regcode, output to res.locals.org
+function assignOrganization(req, res, next){
+  mysql.query('SELECT id, regcode, regexpire FROM Organization WHERE regcode = ?', [req.body.regcode],
+    function(error, result, fields){
+      if(error || result.length > 1){
+        logger.error(error | 'ERROR: Possible regcode collision...');
+        req.session.messages = ["Something went wrong, please try again."];
+        return res.redirect('/register');
+      }
+      if(result[0].regexpire > Date.now()){
+        req.session.messages = ["Registration code expired. Please contact your Organization Administrator for a new code."];
+        return res.redirect('/register');
+      }
+      else{
+        res.locals.org = result[0].id;
+        next();
+      }
+    });
+}
 
 module.exports = {
   passport: passport,
@@ -145,5 +143,7 @@ module.exports = {
   getUserFromEmail: getUserFromEmail,
   getUserFromId: getUserFromId,
   logLoginAttempt: logLoginAttempt,
-  checkOrgAuthorized: checkOrgAuthorized
+  checkOrgAuthorized: checkOrgAuthorized,
+  getUserProfile: getUserProfile,
+  assignOrganization: assignOrganization
 }

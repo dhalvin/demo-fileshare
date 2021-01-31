@@ -8,6 +8,12 @@ function initialize(passport, getUserByEmail, getUserById, logLoginAttempt) {
     if (user == null) {
       return done(null, false, { message: 'Incorrect Email or Password' });
     }
+    else if(user.status == 2){
+      return done(null, false, { message: 'You must finish registering your account to proceed. Please check your inbox for your invitation. (And your spam folder)'});
+    }
+    else if(user.status == 0){
+      return done(null, false, { message: 'Account disabled. Please contact your Organization Administrator.'});
+    }
 
     try {
       var timetounlock = (1000 * 60 * LOCKOUT_MINUTES) - (Date.now() - user.attempttime);

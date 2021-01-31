@@ -7,6 +7,7 @@ const validator = require('express-validator');
 const nodemail = require('../email-config');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
+const { nanoid } = require('nanoid');
 
 /* For Testing */
 router.get('/test', function(req, res, next){
@@ -66,13 +67,21 @@ router.post('/register',
   validator.check('policycheck', 'You must agree to our Terms and Conditions and Privacy Policy before you may register.').exists(),
   collectValidationErrors('/register'),
   checkEmailNotUsed,
+  auth.assignOrganization,
   async function(req, res, next) {
     try {
       //Check org code is good
       //Create user in DB
       const hashedPassword = await bcrypt.hash(req.body.password, 10);
       var regdate = Date.now();
-      mysql.query('INSERT INTO User (fname, lname, orgid, email, password, regdate) VALUES (?, ?, ?, ?, ?, ?)', [req.body.fname, req.body.lname, 1, req.body.email, hashedPassword, regdate],
+      var query = {
+        command: 'INSERT INTO User (fname, lname, orgid, email, password, regdate, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        args: [req.body.fname, req.body.lname, res.locals.org, req.body.email, hashedPassword, regdate, 1]};
+      if(res.locals.invite){
+        query.command = 'UPDATE User SET (fname, lname, password, regdate, status) VALUES (?, ?, ?, ?, ?)';
+        query.args = [req.body.fname, req.body.lname, hashedPassword, regdate, 1];
+      }
+      mysql.query(query.command, query.args,
         function(error, result, fields){
           if(!error){
             jwt.sign({data: result.insertId.toString()}, req.body.email + '-' + regdate, function(sign_error, token){
@@ -178,6 +187,22 @@ router.delete('/logout', function(req, res){
   res.redirect('/login');
 });
 
+router.get('/users', auth.checkAuthenticatedAjax, async function(req, res, next){
+  var renderObject = {layout: false};
+  renderObject.users = [
+    {email: 'user1@aol.com', name: 'Spider Man', regdate: new Date().toDateString(), status: 'Disabled', disabled: true},
+    {email: 'user2@yahoo.com', name: 'Fred Flintstone', regdate: new Date().toDateString(), status: 'Active', disabled: false}
+  ];
+  res.render('users_view', renderObject);});
+
+router.get('/regcode', auth.checkAuthenticatedAjax, async function(req, res, next){
+  var response = {data: {}, error: ""};
+  response.data.regcode = nanoid(10);
+  response.data.regexpire = new Date().getDate()+1;
+  //' WHERE id = ?', [results.insertId, userid],
+  mysql.query('UPDATE Organization SET regcode = ?, regexpire = ? WHERE id = ?', [response.data.regcode, response.data.regexpire, ]);
+  res.render('users_view', renderObject);});
+
 /*Save user input to session so forms can be repopulated in the event of an error*/
 function captureUserInput(req, res, next){
   var fields = {};
@@ -208,15 +233,21 @@ function collectValidationErrors(redirect, options={}){
 
 function checkEmailNotUsed(req, res, next){
   try {
-    mysql.query('SELECT email FROM User WHERE email = ?', [req.body.email],
+    mysql.query('SELECT email, status FROM User WHERE email = ?', [req.body.email],
       function(error, results, fields){
         if(!error){
           if(results.length > 0){
-            req.session.messages = ["There is already an account registered with that email address."];
-            return res.redirect('/register');
+            if(results[0].status == 2){
+              res.locals.invite = true;
+              return next();
+            }
+            else{
+              req.session.messages = ["There is already an account registered with that email address."];
+              return res.redirect('/register');
+            }
           }
           else{
-            next();
+            return next();
           }
         }
         else{
