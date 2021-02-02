@@ -1,0 +1,23 @@
+<h4>Manage Organizations</h4>
+<button class="btn btn-primary" onclick="requestOrgs()">Refresh</button>
+<table class="table table-hover">
+  <thead class="table-dark">
+    <tr class="bg-primary">
+      <th scope="col">Name</th>
+      <th scope="col">Directory</th>
+      <th scope="col">Status</th>
+      <th scope="col">Enable/Disable</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{#each orgs}}
+    <tr>
+      <td scope="row">{{this.name}}</td>
+      <td scope="row">{{this.dirkey}}</td>
+      <td scope="row">{{this.status}}</td>
+      {{#if this.disabled}}<td scope="row"><button class="btn btn-success" onclick="changeOrgStatus(this)" status="1">Enable</button></td>{{/if}}
+      {{#unless this.disabled}}<td scope="row"><button class="btn btn-warning" onclick="changeOrgStatus(this)" status="0">Disable</button></td>{{/unless}}
+    </tr>
+    {{/each}}
+  </tbody>
+</table>

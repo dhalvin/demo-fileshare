@@ -8,16 +8,64 @@ const nodemail = require('../email-config');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
 const { nanoid } = require('nanoid');
+//const filesRouter = require('./ajax');
 
 /* For Testing */
 router.get('/test', function(req, res, next){
   res.render('test', {title: 'Test', scripts: ['test']});
 });
 
+async function renderPartial(view, options, res, req){
+  return new Promise(function (resolve, reject) {
+    options.layout = false;
+    res.render(view, options, function (error, html) {
+      if(error){
+        reject();
+        throw error;
+      }
+      else{
+        resolve(html);
+      }
+    });
+  });
+}
+
+async function getOrgInfo(id){
+  return new Promise(function (resolve, reject) {
+    mysql.query('SELECT id, regcode, regexpire FROM Organization WHERE id = ?', [id], function(error, results, fields){
+      if(error) throw error;
+      resolve({regcode: results[0].regcode, regexpire: results[0].regexpire});
+    });
+  });
+}
 /* Home page. */
-router.get('/', auth.checkAuthenticated, function(req, res, next) {
-  //var awsResponse = await aws.listOrganizations(req.user.org);
-  res.render('index', { title: 'Home', user: req.user, scripts: ['files'], styles: ['index']});
+router.get('/', auth.checkAuthenticated, async function(req, res, next) {
+  var response = {title: 'Home', user: req.user, scripts: ['index', 'files', 'account'], styles: ['index']};
+  //Render files table
+  var table_files = await renderPartial('index/table_files_loading', {}, res, req);
+  //Render files tab pane
+  response.tab_files = await renderPartial('index/tab_files', {table_files: table_files}, res, req);
+
+  //Render account tab pane
+  response.tab_account = await renderPartial('index/tab_account', {user: req.user}, res, req);
+
+  if(req.user.admin){
+    //Render users table
+    var table_users = await renderPartial('index/table_users_loading', {}, res, req);
+    //Render users tab
+    var orgInfo = await getOrgInfo(req.user.orgid);
+    response.tab_users = await renderPartial('index/tab_users', {user: req.user, regcode: orgInfo.regcode, regexpire: orgInfo.regexpire, table_users: table_users}, res, req);
+    response.scripts.push('users');
+  }
+
+  if(req.user.superadmin){
+    //Render orgs table
+    var table_orgs = await renderPartial('index/table_orgs_loading', {}, res, req);
+    //Render orgs tab
+    response.tab_orgs = await renderPartial('index/tab_orgs', {table_orgs: table_orgs}, res, req);
+    response.scripts.push('orgs');
+  }
+  res.render('index', response);
 });
 
 /* Change Password */
@@ -41,8 +89,26 @@ router.post('/login',
   captureUserInput,
   validator.check('email', 'Please enter a valid email address').isEmail().normalizeEmail(),
   collectValidationErrors('/login'),
-  auth.authenticate());
+  auth.authenticate()
+);
 
+router.get('/resend',
+  auth.checkNotAuthenticated,
+  validator.check('email', 'Please enter a valid email address').isEmail().normalizeEmail(),
+  collectValidationErrors('/login'),
+  async function(req, res, next){
+    var user = await auth.getUserFromEmail(req.query.email);
+    sendConfirmation(user.id, user.email, user.fname, user.lname, user.regdate, 'An email has been sent to ' + email + '. Please follow the link in the email to confirm your email address. (Check your spam folder)', res, req);
+});
+
+function sendConfirmation(id, email, fname, lname, regdate, success, res, req){
+  jwt.sign({data: id}, email + '-' + regdate, function(sign_error, token){
+    if(sign_error) throw sign_error;
+    nodemail.sendMail(res, 'email_confirm', {title: 'Confirm your email', subject: 'Confirm your email', user: {fname: fname, lname: lname, email: email}, token:'https://files.hanessassociates.com/confirm/'+token}, email);
+    req.session.successalert = {strong: 'Success!', msg: success};
+    res.redirect('/login');
+  });
+}
 /* Register Page */
 router.get('/register', auth.checkNotAuthenticated, function(req, res, next) {
   const response = {title: 'Register'};
@@ -55,7 +121,7 @@ router.post('/register',
   captureUserInput,
   validator.check('fname').trim().notEmpty().withMessage("First name cannot be empty"),
   validator.check('lname').trim().notEmpty().withMessage("Last name cannot be empty"),
-  validator.check('regcode').trim().notEmpty().withMessage("Registration code cannot be empty"),
+  validator.check('regcode').trim().notEmpty().withMessage("Registration code cannot be empty").matches('^[A-Za-z0-9_-]{10}$').withMessage('Invalid Registration Code'),
   validator.check('email', 'Please enter a valid email address').trim().notEmpty().withMessage("Email cannot be empty").isEmail().normalizeEmail(),
   validator.check('password', 'Password must be between 14 and 32 characters').isLength({min:14, max:32}).bail().isStrongPassword({ minLength: 14 }).withMessage('Password is not strong enough. Please check password requirements.'),
   validator.check('passconf').custom(function(value, { req }){
@@ -70,26 +136,21 @@ router.post('/register',
   auth.assignOrganization,
   async function(req, res, next) {
     try {
-      //Check org code is good
       //Create user in DB
       const hashedPassword = await bcrypt.hash(req.body.password, 10);
       var regdate = Date.now();
+      var user = await auth.getUserFromEmail(req.body.email);
       var query = {
         command: 'INSERT INTO User (fname, lname, orgid, email, password, regdate, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
         args: [req.body.fname, req.body.lname, res.locals.org, req.body.email, hashedPassword, regdate, 1]};
       if(res.locals.invite){
-        query.command = 'UPDATE User SET (fname, lname, password, regdate, status) VALUES (?, ?, ?, ?, ?)';
-        query.args = [req.body.fname, req.body.lname, hashedPassword, regdate, 1];
+        query.command = 'UPDATE User SET fname = ?, lname = ?, password = ?, regdate = ?, status = ? WHERE email = ?';
+        query.args = [req.body.fname, req.body.lname, hashedPassword, regdate, 1, req.body.email];
       }
       mysql.query(query.command, query.args,
         function(error, result, fields){
           if(!error){
-            jwt.sign({data: result.insertId.toString()}, req.body.email + '-' + regdate, function(sign_error, token){
-              if(sign_error) throw sign_error;
-              nodemail.sendMail(res, 'email_confirm', {title: 'Confirm your email', subject: 'Confirm your email', user: {fname: req.body.fname, lname: req.body.lname, email: req.body.email}, token:'https://files.hanessassociates.com/confirm/'+token}, req.body.email);
-              req.session.successalert = {strong: 'Success!', msg: 'Your account has been registered. An email has been sent to ' + req.body.email + '. Please follow the link in the email to confirm your email address. (Check your spam folder)'};
-              res.redirect('/login');
-            });
+            sendConfirmation((user ? user.id.toString() : result.insertId.toString()), req.body.email, req.body.fname, req.body.lname, regdate, 'Your account has been registered. An email has been sent to ' + req.body.email + '. Please follow the link in the email to confirm your email address. (Check your spam folder)', res, req);
           }
           else{
             logger.error(error);
@@ -187,21 +248,57 @@ router.delete('/logout', function(req, res){
   res.redirect('/login');
 });
 
-router.get('/users', auth.checkAuthenticatedAjax, async function(req, res, next){
+router.get('/users', auth.checkAuthenticatedAjax, auth.checkAdmin, async function(req, res, next){
+  const statusStr = ['Disabled', 'Active', 'Invite Sent'];
   var renderObject = {layout: false};
-  renderObject.users = [
-    {email: 'user1@aol.com', name: 'Spider Man', regdate: new Date().toDateString(), status: 'Disabled', disabled: true},
-    {email: 'user2@yahoo.com', name: 'Fred Flintstone', regdate: new Date().toDateString(), status: 'Active', disabled: false}
-  ];
-  res.render('users_view', renderObject);});
+  renderObject.users = [];
+  mysql.query('SELECT email, fname, lname, regdate, status FROM User WHERE orgid = ?', [req.user.orgid], function(error, results, fields){
+    if(!error){
+      for(result of results){
+        renderObject.users.push({email: result.email, name: result.fname + ' ' + result.lname, regdate: new Date(result.regdate).toDateString(), status: statusStr[result.status], disabled: result.status == 0});
+      }
+      res.render('index/table_users', renderObject);
+    }
+    else{
+      logger.error(error);
+      res.json({data: null, error: "Something went wrong."});
+    }
+  });
+});
 
-router.get('/regcode', auth.checkAuthenticatedAjax, async function(req, res, next){
-  var response = {data: {}, error: ""};
-  response.data.regcode = nanoid(10);
-  response.data.regexpire = new Date().getDate()+1;
-  //' WHERE id = ?', [results.insertId, userid],
-  mysql.query('UPDATE Organization SET regcode = ?, regexpire = ? WHERE id = ?', [response.data.regcode, response.data.regexpire, ]);
-  res.render('users_view', renderObject);});
+router.get('/orgs', auth.checkAuthenticatedAjax, auth.checkSuperAdmin, async function(req, res, next){
+  const statusStr = ['Disabled', 'Active'];
+  var renderObject = {layout: false};
+  renderObject.orgs = [];
+  mysql.query('SELECT name, dirkey, status FROM Organization', function(error, results, fields){
+    if(!error){
+      for(result of results){
+        renderObject.orgs.push({name: result.name, dirkey: result.dirkey, status: statusStr[result.status], disabled: result.status == 0});
+      }
+      res.render('index/table_orgs', renderObject);
+    }
+    else{
+      logger.error(error);
+      res.json({data: null, error: "Something went wrong."});
+    }
+  });
+});
+
+router.get('/regcode', auth.checkAuthenticatedAjax, auth.checkAdmin,
+  function(req, res, next){
+    var response = {data: {}, error: null};
+      response.data.regcode = nanoid(10);
+      response.data.regexpire = Date.now() + (1000 * 60 * 60 * 24);
+      mysql.query('UPDATE Organization SET regcode = ?, regexpire = ? WHERE id = ?', [response.data.regcode, response.data.regexpire, req.user.orgid], function(error, results, fields){
+        if(error){
+          logger.error(error);
+          res.json({data: null, error: "Something went wrong. Try again later."});
+        }
+        else{
+          res.json(response);
+        }
+      });
+});
 
 /*Save user input to session so forms can be repopulated in the event of an error*/
 function captureUserInput(req, res, next){

@@ -35,13 +35,13 @@ function checkAuthenticatedAjax(req, res, next) {
     next();
   }
   else {
-    res.json(JSON.stringify({err: 'Invalid Authentication', data: null}));
+    res.json({err: 'Invalid Authentication', data: null});
   }
 }
 
 function checkNotAuthenticatedAjax(req, res, next) {
   if (req.isAuthenticated()) {
-    res.json(JSON.stringify({err: 'Invalid Authentication', data: null}));
+    res.json({err: 'Invalid Authentication', data: null});
   }
   else {
     next();
@@ -53,16 +53,34 @@ function checkOrgAuthorized(req, res, next) {
     next();
   }
   else {
-    res.json(JSON.stringify({err: 'Invalid Authentication', data: null}));
+    res.json({error: 'Invalid Authentication', data: null});
+  }
+}
+
+function checkAdmin(req, res, next) {
+  if (req.user.admin) {
+    next();
+  }
+  else {
+    res.json({error: 'Invalid Authentication', data: null});
+  }
+}
+
+function checkSuperAdmin(req, res, next) {
+  if (req.user.superadmin) {
+    next();
+  }
+  else {
+    res.json({error: 'Invalid Authentication', data: null});
   }
 }
 
 async function getUserFromEmail(email) {
-  return await getUserProfile('email', email);
+  return await getUserProfile('User.email', email);
 }
 
 async function getUserFromId(id) {
-  return await getUserProfile('id', id);
+  return await getUserProfile('User.id', id);
 }
 
 async function getUserProfile(key, value){
@@ -94,7 +112,7 @@ async function getUserProfile(key, value){
         }
         else {
           logger.error(error);
-          req.session.messages = ["Something went wrong, please try again."];
+          //req.session.messages = ["Something went wrong, please try again."];
           resolve(null);
         }
       });
@@ -122,7 +140,11 @@ function assignOrganization(req, res, next){
         req.session.messages = ["Something went wrong, please try again."];
         return res.redirect('/register');
       }
-      if(result[0].regexpire > Date.now()){
+      if(result.length < 1){
+        req.session.messages = ["Invalid registration code. Try again, or verify the code with your Organization Administrator."];
+        return res.redirect('/register');
+      }
+      else if(result[0].regexpire <= Date.now()){
         req.session.messages = ["Registration code expired. Please contact your Organization Administrator for a new code."];
         return res.redirect('/register');
       }
@@ -145,5 +167,7 @@ module.exports = {
   logLoginAttempt: logLoginAttempt,
   checkOrgAuthorized: checkOrgAuthorized,
   getUserProfile: getUserProfile,
-  assignOrganization: assignOrganization
+  assignOrganization: assignOrganization,
+  checkAdmin: checkAdmin,
+  checkSuperAdmin: checkSuperAdmin
 }

@@ -9,6 +9,10 @@ const dbConfig = {
     multipleStatements: true
   };
 
+if(process.env.NODE_ENV !== 'production'){
+  dbConfig.insecureAuth = true;
+}
+
 var dbCon;
 function createDBConnect(){
   dbCon = mysql.createConnection(dbConfig);

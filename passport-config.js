@@ -26,7 +26,7 @@ function initialize(passport, getUserByEmail, getUserById, logLoginAttempt) {
             return done(null, user);
           }
           else{
-            return done(null, false, { message: 'You must confirm your email address to proceed. Please check your inbox. (And your spam folder)'});
+            return done(null, false, { message: 'You must confirm your email address to proceed. Please check your inbox. (And your spam folder) <a href=/resend?email='+user.email+'>Resend Verification</a>'});
           }
           
         }

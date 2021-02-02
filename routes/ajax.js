@@ -15,7 +15,7 @@ router.get('/', auth.checkAuthenticatedAjax, async function(req, res, next){
   renderObject.files = awsResponse.Contents;
   processNames('Prefix', '', renderObject.dirs);
   processNames('Key', '', renderObject.files);
-  res.render('files_view', renderObject);});
+  res.render('index/table_files', renderObject);});
 
 router.get('/:org', auth.checkAuthenticatedAjax, auth.checkOrgAuthorized, async function(req, res, next){
   var renderObject = {layout: false};
@@ -26,7 +26,7 @@ router.get('/:org', auth.checkAuthenticatedAjax, auth.checkOrgAuthorized, async 
   renderObject.files = awsResponse.Contents;
   processNames('Prefix', req.user.org +'/', renderObject.dirs);
   processNames('Key', req.user.org +'/', renderObject.files);
-  res.render('files_view', renderObject);});
+  res.render('index/table_files', renderObject);});
 
 router.get('/:org/:year', auth.checkAuthenticatedAjax, auth.checkOrgAuthorized, async function(req, res, next){
   var renderObject = {layout: false};
@@ -38,7 +38,7 @@ router.get('/:org/:year', auth.checkAuthenticatedAjax, auth.checkOrgAuthorized, 
   renderObject.files = awsResponse.Contents;
   processNames('Prefix', req.user.org +'/'+req.params.year+'/', renderObject.dirs);
   processNames('Key', req.user.org +'/'+req.params.year+'/', renderObject.files);
-  res.render('files_view', renderObject);
+  res.render('index/table_files', renderObject);
 });
 
 router.get('/:org/:year/:plan', auth.checkAuthenticatedAjax, auth.checkOrgAuthorized, async function(req, res, next){
@@ -52,7 +52,7 @@ router.get('/:org/:year/:plan', auth.checkAuthenticatedAjax, auth.checkOrgAuthor
   renderObject.files = awsResponse.Contents;
   processNames('Prefix', req.user.org +'/'+req.params.year+'/'+req.params.plan+'/', renderObject.dirs);
   processNames('Key', req.user.org +'/'+req.params.year+'/'+req.params.plan+'/', renderObject.files);
-  res.render('files_view', renderObject);
+  res.render('index/table_files', renderObject);
 });
 
 router.get('/dl/:org/:year/:plan/:planfile', auth.checkAuthenticatedAjax, auth.checkOrgAuthorized, async function(req, res, next){
