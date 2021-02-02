@@ -109,6 +109,20 @@ function sendConfirmation(id, email, fname, lname, regdate, success, res, req){
     res.redirect('/login');
   });
 }
+
+router.get('/invite/:token', auth.checkNotAuthenticated,
+  validator.check('token', 'Invalid URL').isJWT(),
+  verifyToken('/login', [{source: 'user', value: 'email'}, {source: 'org', value: 'regcode'}, {source: 'user', value: 'status'}]),
+  function(req, res, next){
+    var user = res.locals.user;
+    var org = res.locals.org;
+    req.session.fields = {};
+    req.session.fields.invite = true;
+    req.session.fields.org = org.name;
+    req.session.fields.regcode = org.regcode;
+    req.session.fields.email = user.email;
+    res.redirect('/register');
+  });
 /* Register Page */
 router.get('/register', auth.checkNotAuthenticated, function(req, res, next) {
   const response = {title: 'Register'};
@@ -195,7 +209,8 @@ async function(req, res, next){
 /* Confirm Email */
 router.get('/confirm/:token',
   auth.checkNotAuthenticated,
-  verifyToken('/login', 'email'),
+  validator.check('token', 'Invalid URL').isJWT(),
+  verifyToken('/login', [{source: 'user', value: 'email'}, {source: 'user', value: 'regdate'}]),
   async function(req, res, next){
     var user = res.locals.user;
     mysql.query('UPDATE User SET emailverified = ? WHERE id = ?', [1, user.id]);
@@ -213,7 +228,8 @@ router.get('/confirm/:token',
 /* Reset Password */
 router.get('/reset/:token',
   auth.checkNotAuthenticated,
-  verifyToken('/login', 'password'),
+  validator.check('token', 'Invalid URL').isJWT(),
+  verifyToken('/login', [{source: 'user', value: 'password'}, {source: 'user', value: 'regdate'}]),
   function(req, res, next) {
     var token = req.params.token;
     const response = { title: 'Reset Password', token: token, user: res.locals.user};
@@ -224,7 +240,8 @@ router.get('/reset/:token',
 
 router.post('/reset/:token',
   auth.checkNotAuthenticated,
-  verifyToken('/login', 'password'),
+  validator.check('token', 'Invalid URL').isJWT(),
+  verifyToken('/login', [{source: 'user', value: 'password'}, {source: 'user', value: 'regdate'}]),
   validator.check('newpass', 'Password must be between 14 and 32 characters').isLength({min:14, max:32}).bail().isStrongPassword({ minLength: 14 }).withMessage('Password is not strong enough. Please check password requirements.'),
   validator.check('passconf').custom(validateFieldMatch('newpass', 'Passwords do not match')),
   collectValidationErrors('/reset', {param: 'token'}),
@@ -278,7 +295,7 @@ router.get('/users/status/:id/:status', auth.checkAuthenticatedAjax, auth.checkA
 });
 
 router.get('/orgs', auth.checkAuthenticatedAjax, auth.checkSuperAdmin, function(req, res, next){
-  const statusStr = ['Disabled', 'Active'];
+  const statusStr = ['Disabled', 'Active', 'Invite Sent'];
   var renderObject = {layout: false};
   renderObject.orgs = [];
   mysql.query('SELECT id, name, dirkey, status FROM Organization', function(error, results, fields){
@@ -305,6 +322,42 @@ router.get('/orgs/status/:orgid/:status', auth.checkAuthenticatedAjax, auth.chec
       res.json({data: true, error: null});
     });
 });
+
+router.post('/orgs/create', auth.checkAuthenticatedAjax, auth.checkSuperAdmin,
+  validator.check('org_name').trim().notEmpty().withMessage("Organization name cannot be empty"),
+  validator.check('org_email', 'Please enter a valid email address').trim().notEmpty().withMessage("Email cannot be empty").isEmail().normalizeEmail(),
+  collectValidationErrors(null),
+  checkEmailNotUsedAjax('body', 'org_email'),
+  function(req, res, next){
+    var regcode = nanoid(10);
+    var regexpire = Date.now() + (1000 * 60 * 60 * 24);
+    mysql.query('INSERT INTO Organization (name, dirkey, regcode, regexpire, status) VALUES (?, ?, ?, ?, ?)', [req.body.org_name, req.body.org_name, regcode, regexpire, 2], function(error, result, fields){
+      if(error) throw error;
+      var orgid = result.insertId.toString();
+      mysql.query('INSERT INTO User (email, fname, lname, orgid, status, isadmin) VALUES (?, ?, ?, ?, ?, ?)', [req.body.org_email, ' ', ' ', orgid, 2, true], function(error, result, fields){
+        if(error) throw error;
+        var userid = result.insertId.toString();
+        sendInvite('email_invitation_org', {
+          id: userid,
+          email: req.body.org_email,
+          regcode: regcode, 
+          regexpire: regexpire,
+          org: req.body.org_name,
+          sender: req.user.email
+        }, res, function(){
+          res.json({data: {success: "An email has been sent to " + req.body.org_email + " with instructions to register their account. The registration link included in the email will expire in 24 hours. Return to this screen and use the \"Resend\" button if the invitation expires before they can register."}, error: null});
+        });
+      });
+    });
+});
+
+function sendInvite(template, options, res, callback){
+  jwt.sign({data: options.id, exp: Math.floor(options.regexpire/1000)}, options.email + '-' + options.regcode + '-2', function(sign_error, token){
+    if(sign_error) throw sign_error;
+    nodemail.sendMail(res, template, {title: 'Register Your Account', subject: 'Register Your Account', invite: {org: options.org, email: options.email, sender: options.sender}, user: {org: options.org}, token:'https://files.hanessassociates.com/invite/'+token}, options.email);
+    callback();
+  });
+}
 
 router.get('/regcode', auth.checkAuthenticatedAjax, auth.checkAdmin,
   function(req, res, next){
@@ -341,12 +394,40 @@ function collectValidationErrors(redirect, options={}){
   return function(req, res, next){
     const errors = validator.validationResult(req);
     if(!errors.isEmpty()){
-      req.session.errors = JSON.stringify(errors.array());
-      res.redirect(redirect + (options.param ? '/'+req.params[options.param] : ''));
+      if(!redirect){
+        res.json({data: null, errors: errors.array()});
+      }
+      else{
+        req.session.errors = JSON.stringify(errors.array());
+        res.redirect(redirect + (options.param ? '/'+req.params[options.param] : ''));
+      }
     }
     else{
       next();
     }
+  }
+}
+
+//email location example: 'body' 'org_email'
+function checkEmailNotUsedAjax(varLoc='body', varName='email'){
+  return function(req, res, next){
+    try {
+      mysql.query('SELECT email, status FROM User WHERE email = ?', [req[varLoc][varName]],
+        function(error, results, fields){
+          if(!error){
+            if(results.length > 0){
+              return res.json({data: null, errors: [{msg: "There is already an account registered with that email address."}]});
+            }
+            else{
+              return next();
+            }
+          }
+          else{
+            logger.error(error);
+            return res.json({data: null, errors: [{msg: "Something went wrong."}]});
+          }
+      });
+    }catch{}
   }
 }
 
@@ -406,14 +487,22 @@ function validateFieldMatch(otherField, msg){
   };
 };
 
+//Secret sauce [{source: user, value: regdate}]
 function verifyToken(redirect, secretSauce){
   return async function(req, res, next){ 
     try{
       var token = req.params.token;
       var decodedId = jwt.decode(token).data;
-      var user = await auth.getUserFromId(decodedId);
-      res.locals.user = user;
-      jwt.verify(token, user[secretSauce]+'-'+user.regdate, function(error, decoded){
+      var verifData = {};
+      verifData.user = await auth.getUserFromId(decodedId);
+      verifData.org = await auth.getOrgFromId(verifData.user.orgid);
+      res.locals.user = verifData.user;
+      res.locals.org = verifData.org;
+      var secrets = [];
+      for(piece of secretSauce){
+        secrets.push(verifData[piece.source][piece.value]);
+      }
+      jwt.verify(token, secrets.join('-'), function(error, decoded){
         if(!error){
           return next();
         }

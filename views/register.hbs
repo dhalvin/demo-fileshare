@@ -12,6 +12,9 @@
     </div>
     {{/each}}
     <form action="/register" method="POST">
+      {{#if invite}}
+      <input name="invite" type="hidden" id="invite" value="true">
+      {{/if}}
       <div class="form-group">
         <label for="fname">First Name</label>
         <input name="fname" type="text" class="form-control" id="fname" placeholder="First name" {{#if fname}}value="{{fname}}"{{/if}} required>
@@ -20,13 +23,19 @@
         <label for="lname">Last Name</label>
         <input name="lname" type="text" class="form-control" id="lname" placeholder="Last name" {{#if lname}}value="{{lname}}"{{/if}} required>
       </div>
+      {{#if org}}
+      <div class="form-group">
+        <label for="org">Organization</label>
+        <input name="org" type="text" class="form-control" id="org" value="{{org}}" readonly>
+      </div>
+      {{/if}}
       <div class="form-group">
         <label for="regcode">Registration Code</label>
-        <input name="regcode" type="text" class="form-control" id="regcode" placeholder="Registration code" {{#if regcode}}value="{{regcode}}"{{/if}} required>
+        <input name="regcode" {{#if org}}type="password"{{else}}type="text"{{/if}} class="form-control" id="regcode" placeholder="Registration code" {{#if regcode}}value="{{regcode}}"{{/if}} required{{#if org}} readonly{{/if}}>
       </div>
       <div class="form-group">
         <label for="email">Email address</label>
-        <input name="email" type="email" class="form-control" id="email" placeholder="Enter email" {{#if email}}value="{{email}}"{{/if}} required>
+        <input name="email" type="email" class="form-control" id="email" placeholder="Enter email" {{#if email}}value="{{email}}"{{/if}} required{{#if invite}} readonly{{/if}}>
       </div>
       <div class="form-group">
         <label for="password">Password</label>

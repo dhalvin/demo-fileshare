@@ -1,17 +1,17 @@
 <div class="tab-pane fade" id="orgs" role="tabpanel" aria-labelledby="user-admin-tab">
   <h4>Organization Administration</h4>
-  <form action="/forgot" method="POST"></form>
+  <form onsubmit="return createOrg();">
   <div class="form-group">
-    <label for="org">New Organization</label>
-    <input name="org" type="text" class="form-control" id="org" placeholder="Organization Name">
+    <label for="org_name">New Organization</label>
+    <input name="org_name" type="text" class="form-control" id="org_name" placeholder="Organization Name" required>
   </div>
   <div class="form-group">
-    <label for="email">Organization Admin Email</label>
-    <input name="email" type="email" class="form-control" id="email" aria-describedby="emailHelp"
-      placeholder="email@example.com">
+    <label for="org_email">Organization Admin Email</label>
+    <input name="org_email" type="email" class="form-control" id="org_email" aria-describedby="emailHelp"
+      placeholder="email@example.com" required>
     <small id="emailHelp" class="form-text text-muted">An invitation email will be sent to this address.</small>
   </div>
-  <button type="submit" class="btn btn-primary">Login</button>
+  <button type="submit" class="btn btn-primary">Create Organization</button>
   </form>
   <div id="manageOrgs">{{{table_orgs}}}</div>
 </div>

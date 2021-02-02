@@ -118,6 +118,37 @@ async function getUserProfile(key, value){
       });
   });
 }
+async function getOrgFromId(id) {
+  return await getOrgProfile('id', id);
+}
+
+async function getOrgProfile(key, value){
+  return new Promise(function (resolve, reject) {
+    mysql.query('SELECT id, name, dirkey, regcode, regexpire, status FROM Organization WHERE ?? = ?', [key, value],
+      function (error, results, fields) {
+        if (!error) {
+          if (results.length > 0) {
+            resolve({
+              id: results[0].id,
+              name: results[0].name,
+              dirkey: results[0].dirkey,
+              regcode: results[0].regcode,
+              regexpire: results[0].regexpire,
+              status: results[0].status,
+            });
+          }
+          else {
+            resolve(null);
+          }
+        }
+        else {
+          logger.error(error);
+          resolve(null);
+        }
+      });
+  });
+}
+
 
 function logLoginAttempt(userid, status, firstFail = false) {
   mysql.query('INSERT INTO Login (userid, attempttime, status) VALUES (?, ?, ?)', [userid, Date.now(), status],
@@ -169,5 +200,6 @@ module.exports = {
   getUserProfile: getUserProfile,
   assignOrganization: assignOrganization,
   checkAdmin: checkAdmin,
-  checkSuperAdmin: checkSuperAdmin
+  checkSuperAdmin: checkSuperAdmin,
+  getOrgFromId: getOrgFromId
 }
