@@ -9,7 +9,11 @@ var methodOverride = require('method-override');
 var session = require('express-session');
 
 var router = require('./routes/router');
-var ajaxRouter = require('./routes/ajax');
+var registerRouter = require('./routes/register');
+var loginRouter = require('./routes/login');
+var usersRouter = require('./routes/users');
+var orgsRouter = require('./routes/orgs');
+var filesRouter = require('./routes/files');
 
 var app = express();
 
@@ -32,7 +36,11 @@ app.use(passport.session());
 app.use(methodOverride('_method'));
 
 app.use('/', router);
-app.use('/files', ajaxRouter);
+app.use('/register', registerRouter);
+app.use('/login', loginRouter);
+app.use('/users', usersRouter);
+app.use('/orgs', orgsRouter);
+app.use('/files', filesRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
