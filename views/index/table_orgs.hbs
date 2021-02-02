@@ -15,8 +15,8 @@
       <td scope="row">{{this.name}}</td>
       <td scope="row">{{this.dirkey}}</td>
       <td scope="row">{{this.status}}</td>
-      {{#if this.disabled}}<td scope="row"><button class="btn btn-success" onclick="changeOrgStatus(this)" status="1">Enable</button></td>{{/if}}
-      {{#unless this.disabled}}<td scope="row"><button class="btn btn-warning" onclick="changeOrgStatus(this)" status="0">Disable</button></td>{{/unless}}
+      {{#if this.disabled}}<td scope="row"><button class="btn btn-success" onclick="changeOrgStatus(this)" status="1" org="{{this.id}}">Enable</button></td>{{/if}}
+      {{#unless this.disabled}}<td scope="row"><button class="btn btn-warning" onclick="changeOrgStatus(this)" status="0" org="{{this.id}}">Disable</button></td>{{/unless}}
     </tr>
     {{/each}}
   </tbody>

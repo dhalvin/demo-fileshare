@@ -252,10 +252,10 @@ router.get('/users', auth.checkAuthenticatedAjax, auth.checkAdmin, async functio
   const statusStr = ['Disabled', 'Active', 'Invite Sent'];
   var renderObject = {layout: false};
   renderObject.users = [];
-  mysql.query('SELECT email, fname, lname, regdate, status FROM User WHERE orgid = ?', [req.user.orgid], function(error, results, fields){
+  mysql.query('SELECT id, email, fname, lname, regdate, status FROM User WHERE orgid = ?', [req.user.orgid], function(error, results, fields){
     if(!error){
       for(result of results){
-        renderObject.users.push({email: result.email, name: result.fname + ' ' + result.lname, regdate: new Date(result.regdate).toDateString(), status: statusStr[result.status], disabled: result.status == 0});
+        renderObject.users.push({id: result.id, email: result.email, name: result.fname + ' ' + result.lname, regdate: new Date(result.regdate).toDateString(), status: statusStr[result.status], disabled: result.status == 0});
       }
       res.render('index/table_users', renderObject);
     }
@@ -266,14 +266,25 @@ router.get('/users', auth.checkAuthenticatedAjax, auth.checkAdmin, async functio
   });
 });
 
-router.get('/orgs', auth.checkAuthenticatedAjax, auth.checkSuperAdmin, async function(req, res, next){
+router.get('/users/status/:id/:status', auth.checkAuthenticatedAjax, auth.checkAdmin,
+  validator.check('id').isInt().toInt(),
+  validator.check('status').isInt({min: 0, max: 1}).toInt(),
+  collectValidationErrors('/'),
+  function(req, res, next){
+    mysql.query('UPDATE User SET status = ? WHERE id = ? and orgid = ?', [req.params.status, req.params.id, req.user.orgid], function(error, results, fields){
+      if(error) throw error;
+      res.json({data: true, error: null});
+    });
+});
+
+router.get('/orgs', auth.checkAuthenticatedAjax, auth.checkSuperAdmin, function(req, res, next){
   const statusStr = ['Disabled', 'Active'];
   var renderObject = {layout: false};
   renderObject.orgs = [];
-  mysql.query('SELECT name, dirkey, status FROM Organization', function(error, results, fields){
+  mysql.query('SELECT id, name, dirkey, status FROM Organization', function(error, results, fields){
     if(!error){
       for(result of results){
-        renderObject.orgs.push({name: result.name, dirkey: result.dirkey, status: statusStr[result.status], disabled: result.status == 0});
+        renderObject.orgs.push({id: result.id, name: result.name, dirkey: result.dirkey, status: statusStr[result.status], disabled: result.status == 0});
       }
       res.render('index/table_orgs', renderObject);
     }
@@ -282,6 +293,17 @@ router.get('/orgs', auth.checkAuthenticatedAjax, auth.checkSuperAdmin, async fun
       res.json({data: null, error: "Something went wrong."});
     }
   });
+});
+
+router.get('/orgs/status/:orgid/:status', auth.checkAuthenticatedAjax, auth.checkSuperAdmin,
+  validator.check('orgid').isInt().toInt(),
+  validator.check('status').isInt({min: 0, max: 1}).toInt(),
+  collectValidationErrors('/'),
+  function(req, res, next){
+    mysql.query('UPDATE Organization SET status = ? WHERE id = ?', [req.params.status, req.params.orgid], function(error, results, fields){
+      if(error) throw error;
+      res.json({data: true, error: null});
+    });
 });
 
 router.get('/regcode', auth.checkAuthenticatedAjax, auth.checkAdmin,

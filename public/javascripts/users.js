@@ -18,6 +18,17 @@ function requestRegCode(){
   xhttp.send();
 }
 
+function changeUserStatus(button){
+  var xhttp = new XMLHttpRequest();
+  xhttp.onload = function(){
+    requestUsers();
+  };
+  var user = button.getAttribute('user');
+  var status = button.getAttribute('status');
+  xhttp.open("GET", "/users/status/"+user+"/"+status, true);
+  xhttp.send();
+}
+
 function updateExpireTime(){
   let diff = new Date(expireTime - Date.now());
   if(diff.getTime() > 0){
