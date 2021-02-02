@@ -18,6 +18,16 @@ function changeOrgStatus(button){
   xhttp.send();
 }
 
+function resendOrgInvite(button){
+  var xhttp = new XMLHttpRequest();
+  xhttp.onload = function() {
+    parseResponse(this.responseText);
+  }
+  var org = button.getAttribute('org');
+  xhttp.open("GET", "/orgs/resend/"+org, true);
+  xhttp.send();
+}
+
 function createOrg(){
   $('.alert').alert('close');
   var xhttp = new XMLHttpRequest();
@@ -27,18 +37,9 @@ function createOrg(){
 
   xhttp.setRequestHeader('Content-type', 'application/json');
   xhttp.onload = function() {
-    var response = JSON.parse(this.responseText);
-    if(response.errors){
-      for(err of response.errors){
-        createAlert('danger', err.msg, 'orgs');
-      }
-    }
-    else{
-      if(response.data.success){
-        createAlert('success', response.data.success, 'orgs');
-      }
+    parseResponse(this.responseText, function(response){
       requestOrgs();
-    }
+    });
   }
   xhttp.send(JSON.stringify(data));
   return false;

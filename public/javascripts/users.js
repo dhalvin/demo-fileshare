@@ -29,6 +29,16 @@ function changeUserStatus(button){
   xhttp.send();
 }
 
+function resendUserInvite(button){
+  var xhttp = new XMLHttpRequest();
+  xhttp.onload = function() {
+    parseResponse(this.responseText);
+  }
+  var user = button.getAttribute('user');
+  xhttp.open("GET", "/users/resend/"+user, true);
+  xhttp.send();
+}
+
 function updateExpireTime(){
   let diff = new Date(expireTime - Date.now());
   if(diff.getTime() > 0){

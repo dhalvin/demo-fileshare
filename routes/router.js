@@ -8,7 +8,6 @@ const nodemail = require('../email-config');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
 const { nanoid } = require('nanoid');
-//const filesRouter = require('./ajax');
 
 /* For Testing */
 router.get('/test', function(req, res, next){
@@ -272,7 +271,7 @@ router.get('/users', auth.checkAuthenticatedAjax, auth.checkAdmin, async functio
   mysql.query('SELECT id, email, fname, lname, regdate, status FROM User WHERE orgid = ?', [req.user.orgid], function(error, results, fields){
     if(!error){
       for(result of results){
-        renderObject.users.push({id: result.id, email: result.email, name: result.fname + ' ' + result.lname, regdate: new Date(result.regdate).toDateString(), status: statusStr[result.status], disabled: result.status == 0});
+        renderObject.users.push({id: result.id, email: result.email, name: result.fname + ' ' + result.lname, regdate: new Date(result.regdate).toDateString(), statusText: statusStr[result.status], status: result.status});
       }
       res.render('index/table_users', renderObject);
     }
@@ -301,7 +300,7 @@ router.get('/orgs', auth.checkAuthenticatedAjax, auth.checkSuperAdmin, function(
   mysql.query('SELECT id, name, dirkey, status FROM Organization', function(error, results, fields){
     if(!error){
       for(result of results){
-        renderObject.orgs.push({id: result.id, name: result.name, dirkey: result.dirkey, status: statusStr[result.status], disabled: result.status == 0});
+        renderObject.orgs.push({id: result.id, name: result.name, dirkey: result.dirkey, statusText: statusStr[result.status], status: result.status});
       }
       res.render('index/table_orgs', renderObject);
     }
@@ -315,7 +314,7 @@ router.get('/orgs', auth.checkAuthenticatedAjax, auth.checkSuperAdmin, function(
 router.get('/orgs/status/:orgid/:status', auth.checkAuthenticatedAjax, auth.checkSuperAdmin,
   validator.check('orgid').isInt().toInt(),
   validator.check('status').isInt({min: 0, max: 1}).toInt(),
-  collectValidationErrors('/'),
+  collectValidationErrors(null),
   function(req, res, next){
     mysql.query('UPDATE Organization SET status = ? WHERE id = ?', [req.params.status, req.params.orgid], function(error, results, fields){
       if(error) throw error;
@@ -328,6 +327,7 @@ router.post('/orgs/create', auth.checkAuthenticatedAjax, auth.checkSuperAdmin,
   validator.check('org_email', 'Please enter a valid email address').trim().notEmpty().withMessage("Email cannot be empty").isEmail().normalizeEmail(),
   collectValidationErrors(null),
   checkEmailNotUsedAjax('body', 'org_email'),
+  checkOrgNotUsedAjax('body', 'org_name'),
   function(req, res, next){
     var regcode = nanoid(10);
     var regexpire = Date.now() + (1000 * 60 * 60 * 24);
@@ -351,6 +351,31 @@ router.post('/orgs/create', auth.checkAuthenticatedAjax, auth.checkSuperAdmin,
     });
 });
 
+router.get('/orgs/resend/:orgid', auth.checkAuthenticatedAjax, auth.checkSuperAdmin,
+  validator.check('orgid').isInt().toInt(),
+  collectValidationErrors(null),
+  function(req, res, next){
+    var regcode = nanoid(10);
+    var regexpire = Date.now() + (1000 * 60 * 60 * 24);
+    mysql.query('UPDATE Organization SET regcode = ?, regexpire = ? WHERE id = ? and status = 2', [regcode, regexpire, req.params.orgid], function(error, result, fields){
+      if(error) throw error;
+      if(result.changedRows < 1){
+        return res.json({date: null, errors: [{msg: 'Organization already registered.'}]});
+      }
+      mysql.query('SELECT User.id as id, email, regcode, regexpire, Organization.name as orgname FROM User LEFT JOIN Organization ON User.orgid=Organization.id WHERE User.orgid = ?', [req.params.orgid], function(error, results, fields){
+        if(error) throw error;
+        sendInvite('email_invitation_org', {
+          id: results[0].id,
+          email: results[0].email,
+          regcode: results[0].regcode, 
+          regexpire:results[0]. regexpire,
+          org: results[0].orgname,
+          sender: req.user.email
+        }, res, function(){
+          res.json({data: {success: "An email has been sent to " + req.body.org_email + " with instructions to register their account. The registration link included in the email will expire in 24 hours. Return to this screen and use the \"Resend\" button if the invitation expires before they can register."}, error: null});
+        });
+      });
+});
 function sendInvite(template, options, res, callback){
   jwt.sign({data: options.id, exp: Math.floor(options.regexpire/1000)}, options.email + '-' + options.regcode + '-2', function(sign_error, token){
     if(sign_error) throw sign_error;
@@ -417,6 +442,29 @@ function checkEmailNotUsedAjax(varLoc='body', varName='email'){
           if(!error){
             if(results.length > 0){
               return res.json({data: null, errors: [{msg: "There is already an account registered with that email address."}]});
+            }
+            else{
+              return next();
+            }
+          }
+          else{
+            logger.error(error);
+            return res.json({data: null, errors: [{msg: "Something went wrong."}]});
+          }
+      });
+    }catch{}
+  }
+}
+
+//email location example: 'body' 'org_email'
+function checkOrgNotUsedAjax(varLoc='body', varName='name'){
+  return function(req, res, next){
+    try {
+      mysql.query('SELECT name, status FROM Organization WHERE name = ?', [req[varLoc][varName]],
+        function(error, results, fields){
+          if(!error){
+            if(results.length > 0){
+              return res.json({data: null, errors: [{msg: "There is already an organization registered with that name."}]});
             }
             else{
               return next();

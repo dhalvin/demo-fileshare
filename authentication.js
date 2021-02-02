@@ -85,7 +85,7 @@ async function getUserFromId(id) {
 
 async function getUserProfile(key, value){
   return new Promise(function (resolve, reject) {
-    mysql.query('SELECT User.id, fname, lname, email, emailverified, password, orgid, Organization.name as orgname, User.status, isadmin, issuperadmin, loginattempts, attempttime, regdate FROM User LEFT JOIN Login ON User.lastlogin=Login.id LEFT JOIN Organization on User.orgid=Organization.id WHERE ?? = ?', [key, value],
+    mysql.query('SELECT User.id as id, fname, lname, email, emailverified, password, orgid, Organization.name as orgname, User.status, isadmin, issuperadmin, loginattempts, attempttime, regdate FROM User LEFT JOIN Login ON User.lastlogin=Login.id LEFT JOIN Organization on User.orgid=Organization.id WHERE ?? = ?', [key, value],
       function (error, results, fields) {
         if (!error) {
           if (results.length > 0) {

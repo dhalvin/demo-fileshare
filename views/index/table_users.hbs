@@ -17,9 +17,10 @@
       <td scope="row">{{this.email}}</td>
       <td scope="row">{{this.name}}</td>
       <td scope="row"><small class="text-muted">{{this.regdate}}</small></td>
-      <td scope="row">{{this.status}}</td>
-      {{#if this.disabled}}<td scope="row"><button class="btn btn-success" onclick="changeUserStatus(this)" status="1" user="{{this.id}}">Enable</button></td>{{/if}}
-      {{#unless this.disabled}}<td scope="row"><button class="btn btn-warning" onclick="changeUserStatus(this)" status="0" user="{{this.id}}">Disable</button></td>{{/unless}}
+      <td scope="row">{{this.statusText}}</td>
+      {{#if (isequal this.status 0)}}<td scope="row"><button class="btn btn-success" onclick="changeUserStatus(this)" status="1" user="{{this.id}}">Enable</button></td>{{/if}}
+      {{#if (isequal this.status 1)}}<td scope="row"><button class="btn btn-warning" onclick="changeUserStatus(this)" status="0" user="{{this.id}}">Disable</button></td>{{/if}}
+      {{#if (isequal this.status 2)}}<td scope="row"><button class="btn btn-primary" onclick="resendUserInvite(this)" user="{{this.id}}">Resend</button></td>{{/if}}
       <td scope="row"><button class="btn btn-danger">Delete User</button></td>
     </tr>
     {{/each}}

@@ -14,9 +14,10 @@
     <tr>
       <td scope="row">{{this.name}}</td>
       <td scope="row">{{this.dirkey}}</td>
-      <td scope="row">{{this.status}}</td>
-      {{#if this.disabled}}<td scope="row"><button class="btn btn-success" onclick="changeOrgStatus(this)" status="1" org="{{this.id}}">Enable</button></td>{{/if}}
-      {{#unless this.disabled}}<td scope="row"><button class="btn btn-warning" onclick="changeOrgStatus(this)" status="0" org="{{this.id}}">Disable</button></td>{{/unless}}
+      <td scope="row">{{this.statusText}}</td>
+      {{#if (isequal this.status 0)}}<td scope="row"><button class="btn btn-success" onclick="changeOrgStatus(this)" status="1" org="{{this.id}}">Enable</button></td>{{/if}}
+      {{#if (isequal this.status 1)}}<td scope="row"><button class="btn btn-warning" onclick="changeOrgStatus(this)" status="0" org="{{this.id}}">Disable</button></td>{{/if}}
+      {{#if (isequal this.status 2)}}<td scope="row"><button class="btn btn-primary" onclick="resendOrgInvite(this)" org="{{this.id}}">Resend</button></td>{{/if}}
     </tr>
     {{/each}}
   </tbody>
