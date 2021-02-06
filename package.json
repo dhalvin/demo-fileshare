@@ -6,6 +6,9 @@
     "start": "node ./bin/www",
     "devstart": "node ./bin/dev-https.js"
   },
+  "engines": {
+    "node": "12.18.1"
+  },
   "dependencies": {
     "aws-sdk": "^2.829.0",
     "bcrypt": "^5.0.0",
