@@ -21,6 +21,7 @@ function requestRegCode(){
 function changeUserStatus(button){
   var xhttp = new XMLHttpRequest();
   xhttp.onload = function(){
+    parseResponse(this.responseText, 'users');
     requestUsers();
   };
   var user = button.getAttribute('user');

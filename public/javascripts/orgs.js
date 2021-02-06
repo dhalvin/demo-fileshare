@@ -10,6 +10,7 @@ function requestOrgs(){
 function changeOrgStatus(button){
   var xhttp = new XMLHttpRequest();
   xhttp.onload = function(){
+    parseResponse(this.responseText, 'orgs');
     requestOrgs();
   };
   var org = button.getAttribute('org');

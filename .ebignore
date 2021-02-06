@@ -63,7 +63,12 @@ typings/
 # vscode launch config
 .vscode
 
-gsuite_nodemailer.json
+node_modules/*
+package-lock.json
+.vscode/*
+.env
+*.log
+package-lock.json
 # Elastic Beanstalk Files
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml

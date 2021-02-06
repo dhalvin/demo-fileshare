@@ -30,6 +30,9 @@ router.get('/status/:orgid/:status', auth.checkAuthenticatedAjax, auth.checkSupe
   validator.check('status').isInt({ min: 0, max: 1 }).toInt(),
   rUtil.collectValidationErrors(null),
   function (req, res, next) {
+    if(req.params.orgid == req.user.orgid){
+      return res.json({ data: null, errors: [{msg: 'You cannot change your own organization\'s status.'}] });
+    }
     mysql.query('UPDATE Organization SET status = ? WHERE id = ?', [req.params.status, req.params.orgid], function (error, results, fields) {
       if (error) throw error;
       res.json({ data: true, error: null });

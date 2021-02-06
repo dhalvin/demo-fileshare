@@ -29,6 +29,9 @@ router.get('/status/:id/:status', auth.checkAuthenticatedAjax, auth.checkAdmin,
   validator.check('status').isInt({ min: 0, max: 1 }).toInt(),
   rUtil.collectValidationErrors('/'),
   function (req, res, next) {
+    if(req.params.id == req.user.id){
+      return res.json({ data: null, errors: [{msg: 'You cannot change your own status.'}] });
+    }
     mysql.query('UPDATE User SET status = ? WHERE id = ? and orgid = ?', [req.params.status, req.params.id, req.user.orgid], function (error, results, fields) {
       if (error) throw error;
       res.json({ data: true, error: null });
