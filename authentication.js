@@ -177,7 +177,7 @@ function assignOrganization(req, res, next){
   mysql.query('SELECT id, regcode, regexpire FROM Organization WHERE regcode = ?', [req.body.regcode],
     function(error, result, fields){
       if(error || result.length > 1){
-        logger.error(error | 'ERROR: Possible regcode collision...');
+        logger.error(error || 'ERROR: Possible regcode collision...');
         req.session.messages = ["Something went wrong, please try again."];
         return res.redirect('/register');
       }

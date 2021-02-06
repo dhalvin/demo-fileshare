@@ -1,7 +1,7 @@
 const nodemailer = require('nodemailer');
 const logger = require('./logger');
 const SENDER_ADDRESS = 'admin@hanessassociates.com';
-const mailKey = require(process.env.MAIL_KEYFILE);
+const mailKey = require(process.env.MAIL_KEYFILE || './gsuite_nodemailer.json');
 
 function sendMail(res, template, options, recipient) {
   const transporter = nodemailer.createTransport({
