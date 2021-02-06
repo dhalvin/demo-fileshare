@@ -2,29 +2,33 @@
   <div class="col-12 px-2 py-4 p-md-5 bg-light rounded shadow">
     <h1>Secure File System</h1>
     <h4>Welcome {{user.fname}} - {{user.org}}</h4>
-      <ul class="nav nav-tabs nav-fill" id="tabs" role="tablist">
-        <li class="nav-item">
-          <a class="nav-link active" id="files-tab" data-toggle="tab" href="#files" role="tab" aria-controls="files" aria-selected="true">Files</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" id="account-tab" data-toggle="tab" href="#account" role="tab" aria-controls="account" aria-selected="false">Account</a>
-        </li>
-        {{#if user.admin}}
-        <li class="nav-item">
-          <a class="nav-link" id="user-admin-tab" data-toggle="tab" href="#users" role="tab" aria-controls="users" aria-selected="false">User Admin</a>
-        </li>
-        {{/if}}
-        {{#if user.superadmin}}
-        <li class="nav-item">
-          <a class="nav-link" id="org-admin-tab" data-toggle="tab" href="#orgs" role="tab" aria-controls="orgs" aria-selected="false">Organization Admin</a>
-        </li>
-        {{/if}}
-        <li>
-          <form action="/logout?_method=DELETE" method="POST">
-            <button type="submit" class="btn btn-primary">Logout</button>
-          </form>
-        </li>
-      </ul>
+    <ul class="nav nav-tabs nav-fill" id="tabs" role="tablist">
+      <li class="nav-item">
+        <a class="nav-link active" id="files-tab" data-toggle="tab" href="#files" role="tab" aria-controls="files"
+          aria-selected="true">Files</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" id="account-tab" data-toggle="tab" href="#account" role="tab" aria-controls="account"
+          aria-selected="false">Account</a>
+      </li>
+      {{#if user.admin}}
+      <li class="nav-item">
+        <a class="nav-link" id="user-admin-tab" data-toggle="tab" href="#users" role="tab" aria-controls="users"
+          aria-selected="false">User Admin</a>
+      </li>
+      {{/if}}
+      {{#if user.superadmin}}
+      <li class="nav-item">
+        <a class="nav-link" id="org-admin-tab" data-toggle="tab" href="#orgs" role="tab" aria-controls="orgs"
+          aria-selected="false">Organization Admin</a>
+      </li>
+      {{/if}}
+      <li>
+        <form action="/logout?_method=DELETE" method="POST">
+          <button type="submit" class="btn btn-primary">Logout</button>
+        </form>
+      </li>
+    </ul>
 
     <div class="tab-content" id="tabs-content">
       <!-- Files Tab Pane -->
@@ -41,4 +45,8 @@
       {{/if}}
     </div>
   </div>
+</div>
+<!-- Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1" role="dialog" aria-labelledby="uploadModalLabel"
+  aria-hidden="true">
 </div>

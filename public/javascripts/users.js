@@ -32,11 +32,28 @@ function changeUserStatus(button){
 function resendUserInvite(button){
   var xhttp = new XMLHttpRequest();
   xhttp.onload = function() {
-    parseResponse(this.responseText);
+    parseResponse(this.responseText, 'users');
   }
   var user = button.getAttribute('user');
   xhttp.open("GET", "/users/resend/"+user, true);
   xhttp.send();
+}
+
+function createUser(){
+  $('.alert').alert('close');
+  var xhttp = new XMLHttpRequest();
+  var url = '/users/create';
+  var data = {'user_invite': document.getElementById('user_invite').value};
+  xhttp.open('POST', url, true);
+
+  xhttp.setRequestHeader('Content-type', 'application/json');
+  xhttp.onload = function() {
+    parseResponse(this.responseText, 'users', function(response){
+      requestUsers();
+    });
+  }
+  xhttp.send(JSON.stringify(data));
+  return false;
 }
 
 function updateExpireTime(){

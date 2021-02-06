@@ -1,5 +1,5 @@
 <nav aria-label="breadcrumb bg-primary">
-  <ol class="breadcrumb mb-0">
+  <ol class="breadcrumb mb-0" currentPath="{{currentPath}}">
     <li class="breadcrumb-item {{#unless org}}active{{/unless}}">Organizations</li>
     {{#if org}}<li class="breadcrumb-item {{#unless year}}active{{/unless}}">{{org}}</li>{{/if}}
     {{#if year}}<li class="breadcrumb-item {{#unless plan}}active{{/unless}}">{{year}}</li>{{/if}}

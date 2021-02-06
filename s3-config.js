@@ -1,6 +1,5 @@
 const logger = require('./logger');
 const aws = require('aws-sdk');
-const { errorMonitor } = require('nodemailer/lib/mailer');
 aws.config.update({ region: 'us-west-1' });
 const s3 = new aws.S3({ apiVersion: '2006-03-01' });
 const bucketName = process.env.S3_BUCKET_NAME;
@@ -67,23 +66,42 @@ function listPlanFiles(orgName, year, plan){
   return listDirContents(orgName + '/' + year + '/' + plan + '/');
 }
 
-function getFile(fileKey){
-  return new Promise(function(resolve, reject){
-    try{
-      var bucketParams = {
-        Bucket: bucketName,
-        Key: fileKey
-      };
-      s3.getObject(bucketParams, function(err, data){
-        logger.info(data);
-        resolve(data);
-      });
-    }
-    catch(error){
-      logger.error(error);
-      reject(error);
-    }
-  });
+function getFileStream(fileKey){
+  try{
+    var bucketParams = {
+      Bucket: bucketName,
+      Key: fileKey
+    };
+    return s3
+      .getObject(bucketParams)
+      .createReadStream()
+      .on('error', err => {
+        logger.error('stream error', err);
+      });/*
+      .on('finish', () => {
+        logger.info('stream finish');
+      })
+      .on('close', () => {
+        logger.info('stream close');
+      });*/
+  }
+  catch(error){
+    logger.error(error);
+  }
+}
+
+function uploadFile(key, stream){
+  try{
+    var bucketParams = {
+      Bucket: bucketName,
+      Key: key,
+      Body: stream
+    };
+    return s3.upload(bucketParams);
+  }
+  catch(error){
+    logger.error(error);
+  }
 }
 
 module.exports.listBuckets = listBuckets;
@@ -93,4 +111,5 @@ module.exports.listOrganizations = listOrganizations;
 module.exports.listYears = listYears;
 module.exports.listPlans = listPlans;
 module.exports.listPlanFiles = listPlanFiles;
-module.exports.getFile = getFile;
+module.exports.getFileStream = getFileStream;
+module.exports.uploadFile = uploadFile;

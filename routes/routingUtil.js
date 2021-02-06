@@ -22,7 +22,7 @@ module.exports = {
   },
 
   sendConfirmation: function (id, email, fname, lname, regdate, success, res, req) {
-    jwt.sign({ data: id }, email + '-' + regdate, function (sign_error, token) {
+    jwt.sign({ data: id }, email + '-' + regdate + '-0', function (sign_error, token) {
       if (sign_error) throw sign_error;
       nodemail.sendMail(res, 'email_confirm', { title: 'Confirm your email', subject: 'Confirm your email', user: { fname: fname, lname: lname, email: email }, token: 'https://files.hanessassociates.com/confirm/' + token }, email);
       req.session.successalert = { strong: 'Success!', msg: success };

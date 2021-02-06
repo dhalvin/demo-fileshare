@@ -1,3 +1,16 @@
 <div class="tab-pane fade show active" id="files" role="tabpanel" aria-labelledby="files-tab">
-    {{{table_files}}}
+  <form id="uploadForm">
+    <div class="input-group my-3">
+      <div class="input-group-prepend">
+        <button type="button" class="btn btn-primary"
+          onclick="document.getElementById('fileInput').click()">Browse</button>
+      </div>
+      <label class="px-2 form-control" id="fileInputLabel" for="fileInput">Select file(s) to upload</label>
+      <input type="file" style="display:none;" id="fileInput" multiple required>
+      <div class="input-group-append">
+        <button type="submit" class="btn btn-primary">Upload</button>
+      </div>
+    </div>
+  </form>
+  <div id="filesBrowse">{{{table_files}}}</div>
 </div>

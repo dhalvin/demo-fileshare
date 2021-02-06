@@ -19,18 +19,19 @@ function createAlert(type, msg, containerId){
   container.insertBefore(err, container.childNodes[0]);
 }
 
-function parseResponse(reponseText, successCallback=function(){}, failCallback=function(){}){
+function parseResponse(responseText, containerId, successCallback=function(){}, failCallback=function(){}){
   var response = JSON.parse(responseText);
   if(response.errors){
     for(err of response.errors){
-      createAlert('danger', err.msg, 'orgs');
+      createAlert('danger', err.msg, containerId);
     }
-    return failCallback(response);
+    failCallback(response);
   }
   else{
     if(response.data.success){
-      createAlert('success', response.data.success, 'orgs');
+      createAlert('success', response.data.success, containerId);
     }
-    return successCallback(response);
+    successCallback(response);
   }
+  return response;
 }

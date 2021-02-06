@@ -10,11 +10,6 @@ const router = express.Router();
 const { nanoid } = require('nanoid');
 const rUtil = require('./routingUtil');
 
-/* For Testing */
-router.get('/test', function (req, res, next) {
-  res.render('test', { title: 'Test', scripts: ['test'] });
-});
-
 /* Home page. */
 router.get('/', auth.checkAuthenticated, async function (req, res, next) {
   var response = { title: 'Home', user: req.user, scripts: ['index', 'files', 'account'], styles: ['index'] };
@@ -46,13 +41,23 @@ router.get('/', auth.checkAuthenticated, async function (req, res, next) {
 });
 
 /* Change Password */
-router.get('/changepassword', function (req, res, next) {
-  res.redirect('/');
-});
-
-router.post('/changepassword', auth.checkAuthenticated, function (req, res, next) {
-  res.redirect('/');
-});
+router.post('/changepassword', auth.checkAuthenticatedAjax,
+  validator.check('password', 'Password cannot be empty.').notEmpty(),
+  validator.check('newpass', 'New Password must be between 14 and 32 characters').isLength({ min: 14, max: 32 }).bail().isStrongPassword({ minLength: 14 }).withMessage('New Password is not strong enough. Please check password requirements.'),
+  validator.check('passconf').custom(function (value, { req }) {
+    if (value !== req.body.newpass) {
+      throw new Error('Passwords do not match');
+    }
+    return true;
+  }),
+  rUtil.collectValidationErrors(null),
+  auth.authenticateAjax,
+  async function (req, res, next) {
+    const hashedPassword = await bcrypt.hash(req.body.newpass, 10);
+    mysql.query('UPDATE User SET password = ? WHERE id = ?', [hashedPassword, req.user.id], function (error, result, fields) {
+      res.json({ data: { success: 'Password changed successfully.' }, errors: null });
+    });
+  });
 
 router.get('/resend',
   auth.checkNotAuthenticated,
@@ -60,7 +65,7 @@ router.get('/resend',
   rUtil.collectValidationErrors('/login'),
   async function (req, res, next) {
     var user = await auth.getUserFromEmail(req.query.email);
-    rUtil.sendConfirmation(user.id, user.email, user.fname, user.lname, user.regdate, 'An email has been sent to ' + email + '. Please follow the link in the email to confirm your email address. (Check your spam folder)', res, req);
+    rUtil.sendConfirmation(user.id, user.email, user.fname, user.lname, user.regdate, 'An email has been sent to ' + user.email + '. Please follow the link in the email to confirm your email address. (Check your spam folder)', res, req);
   });
 
 router.get('/invite/:token', auth.checkNotAuthenticated,
@@ -110,7 +115,7 @@ router.post('/forgot',
 router.get('/confirm/:token',
   auth.checkNotAuthenticated,
   validator.check('token', 'Invalid URL').isJWT(),
-  rUtil.verifyToken('/login', [{ source: 'user', value: 'email' }, { source: 'user', value: 'regdate' }]),
+  rUtil.verifyToken('/login', [{ source: 'user', value: 'email' }, { source: 'user', value: 'regdate' }, { source: 'user', value: 'verified' }]),
   async function (req, res, next) {
     var user = res.locals.user;
     mysql.query('UPDATE User SET emailverified = ? WHERE id = ?', [1, user.id]);

@@ -1,6 +1,7 @@
 const mysql = require('./db-config');
 const passport = require('passport');
 const logger = require('./logger');
+const bcrypt = require('bcrypt');
 const initializePassport = require('./passport-config');
 initializePassport(passport, getUserFromEmail, getUserFromId, logLoginAttempt);
 
@@ -10,6 +11,15 @@ function authenticate() {
     failureRedirect: '/login',
     failureMessage: true
   });
+}
+
+async function authenticateAjax(req, res, next) {
+  if( await bcrypt.compare(req.body.password, req.user.password) ){
+    next();
+  }
+  else{
+    return res.json({data: null, errors: [{msg: 'Incorrect password.'}]});
+  }
 }
 
 function checkAuthenticated(req, res, next) {
@@ -189,6 +199,7 @@ function assignOrganization(req, res, next){
 module.exports = {
   passport: passport,
   authenticate: authenticate,
+  authenticateAjax: authenticateAjax,
   checkAuthenticated: checkAuthenticated,
   checkNotAuthenticated: checkNotAuthenticated,
   checkAuthenticatedAjax: checkAuthenticatedAjax,

@@ -21,7 +21,7 @@ function changeOrgStatus(button){
 function resendOrgInvite(button){
   var xhttp = new XMLHttpRequest();
   xhttp.onload = function() {
-    parseResponse(this.responseText);
+    parseResponse(this.responseText, 'orgs');
   }
   var org = button.getAttribute('org');
   xhttp.open("GET", "/orgs/resend/"+org, true);
@@ -37,7 +37,7 @@ function createOrg(){
 
   xhttp.setRequestHeader('Content-type', 'application/json');
   xhttp.onload = function() {
-    parseResponse(this.responseText, function(response){
+    parseResponse(this.responseText, 'orgs', function(response){
       requestOrgs();
     });
   }

@@ -3,17 +3,18 @@ const logger = require('../logger');
 const auth = require('../authentication');
 const validator = require('express-validator');
 const mysql = require('../db-config');
+const bcrypt = require('bcrypt');
 const rUtil = require('./routingUtil');
 const router = express.Router();
 
 /* Register Page */
-router.get('/register', auth.checkNotAuthenticated, function (req, res, next) {
+router.get('/', auth.checkNotAuthenticated, function (req, res, next) {
   const response = { title: 'Register' };
   rUtil.gatherSessionVariables(response, req);
   res.render('register', response);
 });
 
-router.post('/register',
+router.post('/',
   auth.checkNotAuthenticated,
   rUtil.captureUserInput,
   validator.check('fname').trim().notEmpty().withMessage("First name cannot be empty"),
@@ -47,6 +48,7 @@ router.post('/register',
       mysql.query(query.command, query.args,
         function (error, result, fields) {
           if (!error) {
+            mysql.query('UPDATE Organization SET status = 1 WHERE id = ? and status = 2', [res.locals.org]);
             rUtil.sendConfirmation((user ? user.id.toString() : result.insertId.toString()), req.body.email, req.body.fname, req.body.lname, regdate, 'Your account has been registered. An email has been sent to ' + req.body.email + '. Please follow the link in the email to confirm your email address. (Check your spam folder)', res, req);
           }
           else {

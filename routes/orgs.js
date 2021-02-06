@@ -4,9 +4,10 @@ const auth = require('../authentication');
 const validator = require('express-validator');
 const mysql = require('../db-config');
 const rUtil = require('./routingUtil');
+const { nanoid } = require('nanoid');
 const router = express.Router();
 
-router.get('/orgs', auth.checkAuthenticatedAjax, auth.checkSuperAdmin, function (req, res, next) {
+router.get('/', auth.checkAuthenticatedAjax, auth.checkSuperAdmin, function (req, res, next) {
   const statusStr = ['Disabled', 'Active', 'Invite Sent'];
   var renderObject = { layout: false };
   renderObject.orgs = [];
@@ -24,7 +25,7 @@ router.get('/orgs', auth.checkAuthenticatedAjax, auth.checkSuperAdmin, function 
   });
 });
 
-router.get('/orgs/status/:orgid/:status', auth.checkAuthenticatedAjax, auth.checkSuperAdmin,
+router.get('/status/:orgid/:status', auth.checkAuthenticatedAjax, auth.checkSuperAdmin,
   validator.check('orgid').isInt().toInt(),
   validator.check('status').isInt({ min: 0, max: 1 }).toInt(),
   rUtil.collectValidationErrors(null),
@@ -35,7 +36,7 @@ router.get('/orgs/status/:orgid/:status', auth.checkAuthenticatedAjax, auth.chec
     });
   });
 
-router.post('/orgs/create', auth.checkAuthenticatedAjax, auth.checkSuperAdmin,
+router.post('/create', auth.checkAuthenticatedAjax, auth.checkSuperAdmin,
   validator.check('org_name').trim().notEmpty().withMessage("Organization name cannot be empty"),
   validator.check('org_email', 'Please enter a valid email address').trim().notEmpty().withMessage("Email cannot be empty").isEmail().normalizeEmail(),
   rUtil.collectValidationErrors(null),
@@ -64,7 +65,7 @@ router.post('/orgs/create', auth.checkAuthenticatedAjax, auth.checkSuperAdmin,
     });
   });
 
-router.get('/orgs/resend/:orgid', auth.checkAuthenticatedAjax, auth.checkSuperAdmin,
+router.get('/resend/:orgid', auth.checkAuthenticatedAjax, auth.checkSuperAdmin,
   validator.check('orgid').isInt().toInt(),
   rUtil.collectValidationErrors(null),
   function (req, res, next) {
@@ -77,6 +78,9 @@ router.get('/orgs/resend/:orgid', auth.checkAuthenticatedAjax, auth.checkSuperAd
       }
       mysql.query('SELECT User.id as id, email, regcode, regexpire, Organization.name as orgname FROM User LEFT JOIN Organization ON User.orgid=Organization.id WHERE User.orgid = ?', [req.params.orgid], function (error, results, fields) {
         if (error) throw error;
+        if(results.length < 1){
+          return res.json({ data: null, errors: [{ msg: "Invalid Request" }] });
+        }
         rUtil.sendInvite('email_invitation_org', {
           id: results[0].id,
           email: results[0].email,
@@ -85,7 +89,7 @@ router.get('/orgs/resend/:orgid', auth.checkAuthenticatedAjax, auth.checkSuperAd
           org: results[0].orgname,
           sender: req.user.email
         }, res, function () {
-          res.json({ data: { success: "An email has been sent to " + req.body.org_email + " with instructions to register their account. The registration link included in the email will expire in 24 hours. Return to this screen and use the \"Resend\" button if the invitation expires before they can register." }, error: null });
+          res.json({ data: { success: "An email has been sent to " + results[0].email + " with instructions to register their account. The registration link included in the email will expire in 24 hours. Return to this screen and use the \"Resend\" button if the invitation expires before they can register." }, error: null });
         });
       });
     });
