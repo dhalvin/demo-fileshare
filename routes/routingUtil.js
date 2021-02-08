@@ -41,8 +41,11 @@ module.exports = {
   /*Save user input to session so forms can be repopulated in the event of an error*/
   captureUserInput: function (req, res, next) {
     var fields = {};
+    var forbidden = {'password':null, 'newpass':null,'passconf':null};
     for (field in req.body) {
-      fields[field] = req.body[field];
+      if(!(field in forbidden)){
+        fields[field] = req.body[field];
+      }
     }
     if (req.session.fields) {
       Object.assign(req.session.fields, fields);

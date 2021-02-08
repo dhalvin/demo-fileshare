@@ -7,6 +7,8 @@ var handlebars = require('express-handlebars');
 var passport = require('passport');
 var methodOverride = require('method-override');
 var session = require('express-session');
+var dbStore = require('./db-store-config');
+dbStore.init(session);
 
 var router = require('./routes/router');
 var registerRouter = require('./routes/register');
@@ -29,7 +31,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
-  saveUninitialized: false
+  saveUninitialized: false,
+  store: dbStore.store
 }));
 app.use(passport.initialize());
 app.use(passport.session());
