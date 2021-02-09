@@ -2,6 +2,7 @@ const mysql = require('mysql');
 const logger = require('./logger');
 
 const dbConfig = {
+    connectionLimit: 10,
     host: process.env.MYSQL_URI,
     user: process.env.MYSQL_USER,
     password: process.env.MYSQL_PASS,
@@ -13,28 +14,35 @@ if(process.env.NODE_ENV !== 'production'){
   dbConfig.insecureAuth = true;
 }
 
-var dbCon;
-function createDBConnect(){
-  dbCon = mysql.createConnection(dbConfig);
-  module.exports = dbCon;
-  dbCon.on('error', function(error){
-    logger.error(error);
-    if(error.code === 'PROTOCOL_CONNECTION_LOST'){
-      handleDBDisconnect();
-    }
-    else {
-      throw error;
+var pool;
+connectToDB();
+
+function connectToDB(){
+  pool = mysql.createPool(dbConfig);
+
+  /*pool.on('acquire', function (connection) {
+    console.log('Connection %d acquired', connection.threadId);
+  });
+
+  pool.on('connection', function (connection) {
+    console.log('connection made');
+  });
+
+  pool.on('enqueue', function () {
+    console.log('Waiting for available connection slot');
+  });
+
+  pool.on('release', function (connection) {
+    console.log('Connection %d released', connection.threadId);
+  });*/
+
+  module.exports = pool;
+
+  //Ensure we are really connected.
+  pool.getConnection(function(err, connection){
+    if(err){
+      logger.error('DB Connection Refused... Trying again.', err);
+      setTimeout(connectToDB, 2000);
     }
   });
 }
-function handleDBDisconnect() {
-  createDBConnect();
-  dbCon.connect(function(error){
-    if(error){
-      logger.error('error reconnecting to DB')
-      logger.error(error);
-      setTimeout(handleDBDisconnect, 2000);
-    }
-  });
-}
-createDBConnect();

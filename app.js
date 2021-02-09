@@ -52,6 +52,9 @@ app.use(function(req, res, next) {
 
 // error handler
 app.use(function(err, req, res, next) {
+  if(err['code'] == 'ECONNREFUSED'){
+    reconnectDB();
+  }
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
@@ -60,5 +63,12 @@ app.use(function(err, req, res, next) {
   res.status(err.status || 500);
   res.render('error');
 });
+
+function reconnectDB(){
+  delete require.cache[require.resolve('./db-config')];
+  delete require.cache[require.resolve('./db-store-config')];
+  dbStore = require('./db-store-config');
+  dbStore.init(session);
+}
 
 module.exports = app;
