@@ -28,7 +28,7 @@ router.post('/',
     }
     return true;
   }),
-  validator.check('policycheck', 'You must agree to our Terms and Conditions and Privacy Policy before you may register.').exists(),
+  //validator.check('policycheck', 'You must agree to our Terms and Conditions and Privacy Policy before you may register.').exists(),
   rUtil.collectValidationErrors('/register'),
   rUtil.checkEmailNotUsed,
   auth.assignOrganization,
