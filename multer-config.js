@@ -1,16 +1,17 @@
 const logger = require('./logger');
 const multer = require('multer');
 const aws = require('./s3-config');
+const path = require('path');
 //50 MB
 const sizeLimit = 52428800;
 const filesLimit = 20;
 const acceptedFileTypes = {
-  'doc': {ext: 'doc', mime: 'application/msword', name: 'Microsoft Word'},
-  'docx': {ext: 'docx', mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', name: 'Microsoft Word (OpenXML)'},
-  'pdf': {ext: 'pdf', mime: 'application/pdf', name: 'Adobe Portable Document Format (PDF)'},
-  'xls': {ext: 'xls', mime: 'application/vnd.ms-excel', name: 'Microsoft Excel'},
-  'xlsx': {ext: 'xlsx', mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', name: 'Microsoft Excel (OpenXML)'},
-  'zip': {ext: 'zip', mime: 'application/zip', name: 'ZIP archive'}
+  '.doc': {ext: 'doc', mime: 'application/msword', name: 'Microsoft Word'},
+  '.docx': {ext: 'docx', mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', name: 'Microsoft Word (OpenXML)'},
+  '.pdf': {ext: 'pdf', mime: 'application/pdf', name: 'Adobe Portable Document Format (PDF)'},
+  '.xls': {ext: 'xls', mime: 'application/vnd.ms-excel', name: 'Microsoft Excel'},
+  '.xlsx': {ext: 'xlsx', mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', name: 'Microsoft Excel (OpenXML)'},
+  '.zip': {ext: 'zip', mime: 'application/zip', name: 'ZIP archive'}
 };
 
 function fileFilter (req, file, cb) {
@@ -18,22 +19,12 @@ function fileFilter (req, file, cb) {
     req.badFiles = [];
   }
 
-  var fileName = file.originalname.split('.');
-  //There should be only 1 '.' and therefore exactly 2 parts when split on '.'
-  if(fileName.length != 2){
-    req.badFiles.push({name: file.originalname, reason: 'Invalid File Name'});
-    return cb(null, false);
-  }
+  var fileExt = path.extname(file.originalname);
 
-  if(!(fileName[1] in acceptedFileTypes)){
+  if(!(fileExt in acceptedFileTypes)){
     req.badFiles.push({name: file.originalname, reason: 'Invalid File Type. The only accepted file types are: .doc, .docx, .pdf, .xls, .xlsx, .zip'});
     return cb(null, false);
   }
-
-  /*if(file.mimetype != acceptedFileTypes[fileName[1]].mime){
-    req.badFiles.push({name: file.originalname, reason: 'File extension/MIME type mismatch.'});
-    return cb(null, false);
-  }*/
 
   cb(null, true)
 }
