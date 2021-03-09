@@ -1,0 +1,27 @@
+<nav aria-label="breadcrumb bg-primary">
+  <ol class="breadcrumb mb-0" currentPath="{{currentPath}}">
+    <li class="breadcrumb-item {{#unless org}}active{{/unless}}">Organizations</li>
+    {{#if org}}<li class="breadcrumb-item {{#unless year}}active{{/unless}}">{{org}}</li>{{/if}}
+    {{#if year}}<li class="breadcrumb-item {{#unless plan}}active{{/unless}}">{{year}}</li>{{/if}}
+    {{#if plan}}<li class="breadcrumb-item active">{{plan}}</li>{{/if}}
+  </ol>
+</nav>
+<table class="table table-hover" id="dirTable">
+  <thead class="table-dark">
+    <tr class="bg-primary">
+      <th scope="col">Directory</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{#if back}}
+    <tr onclick="requestFiles(this)" prefix="{{this.back}}">
+      <th scope="row">..Back</th>
+    </tr>
+    {{/if}}
+    {{#each dirs}}
+    <tr onclick="requestFiles(this)" prefix="{{this.Prefix}}">
+      <th scope="row">{{this.displayName}}</th>
+    </tr>
+    {{/each}}
+  </tbody>
+</table>

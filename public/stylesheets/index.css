@@ -5,3 +5,15 @@ table#dirTable > tbody > tr {
 [data-toggle="tooltip"] {
   cursor: pointer;
 }
+
+table tbody {
+  display: block;
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+table thead, table tbody tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}

@@ -18,7 +18,7 @@ router.get('/', auth.checkAuthenticatedAjax, async function (req, res, next) {
   var awsResponse = await aws.listOrganizations(req.user.org);
   renderObject.dirs = awsResponse.CommonPrefixes;
   processNames('Prefix', '', renderObject.dirs);
-  res.render('index/table_files', renderObject);
+  res.render('index/table_dirs', renderObject);
 });
 
 router.get('/:org', auth.checkAuthenticatedAjax, auth.checkOrgAuthorized, async function (req, res, next) {
@@ -31,7 +31,7 @@ router.get('/:org', auth.checkAuthenticatedAjax, auth.checkOrgAuthorized, async 
   renderObject.files = awsResponse.Contents;
   processNames('Prefix', req.user.org + '/', renderObject.dirs);
   processNames('Key', req.user.org + '/', renderObject.files);
-  res.render('index/table_files', renderObject);
+  res.render('index/table_dirs', renderObject);
 });
 
 router.get('/:org/:year', auth.checkAuthenticatedAjax, auth.checkOrgAuthorized, async function (req, res, next) {
@@ -45,7 +45,7 @@ router.get('/:org/:year', auth.checkAuthenticatedAjax, auth.checkOrgAuthorized, 
   renderObject.files = awsResponse.Contents;
   processNames('Prefix', req.user.org + '/' + req.params.year + '/', renderObject.dirs);
   processNames('Key', req.user.org + '/' + req.params.year + '/', renderObject.files);
-  res.render('index/table_files', renderObject);
+  res.render('index/table_dirs', renderObject);
 });
 
 router.get('/:org/:year/:plan', auth.checkAuthenticatedAjax, auth.checkOrgAuthorized, async function (req, res, next) {
@@ -63,8 +63,8 @@ router.get('/:org/:year/:plan', auth.checkAuthenticatedAjax, auth.checkOrgAuthor
   res.render('index/table_files', renderObject);
 });
 
-router.get('/dl/:org/:year?/:plan?/:file', auth.checkAuthenticatedAjax, auth.checkOrgAuthorized, async function (req, res, next) {
-  var pathKey = req.user.org + '/' + (req.params.year ? req.params.year + '/' : '') + (req.params.plan ? req.params.plan + '/' : '') + req.params.file;
+router.get('/dl/:org/:year/:plan/:file', auth.checkAuthenticatedAjax, auth.checkOrgAuthorized, async function (req, res, next) {
+  var pathKey = req.user.org + '/' + req.params.year + req.params.plan + req.params.file;
   var s3Stream = aws.getFileStream(pathKey);
   res.set('Cache-Control', 'no-cache');
   res.set('Content-Disposition', 'attachment; filename=' + req.params.file);
@@ -72,7 +72,7 @@ router.get('/dl/:org/:year?/:plan?/:file', auth.checkAuthenticatedAjax, auth.che
   s3Stream.pipe(res);
 });
 
-router.post('/upload/:org/:year?/:plan?', auth.checkAuthenticatedAjax, auth.checkOrgAuthorized, multer.upload.array('files'),
+router.post('/upload/:org/:year/:plan', auth.checkAuthenticatedAjax, auth.checkOrgAuthorized, multer.upload.array('files'),
   function (req, res, next){
     var response = {data: {files: []}, errors: []};
     if(req.badFiles){
