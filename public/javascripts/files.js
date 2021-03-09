@@ -16,6 +16,11 @@ function requestFiles(button){
   var xhttp = new XMLHttpRequest();
   xhttp.onload = function(){
     document.getElementById('filesBrowse').innerHTML = this.responseText;
+    document.getElementById('fileInput').addEventListener('change', updateFileInputLabel);
+    document.getElementById('fileInput').addEventListener('invalid', function(){
+      createAlert('danger', 'Select a file', 'files');
+    });
+    document.getElementById('uploadForm').addEventListener('submit', startUploadFiles);
   };
   var route = button.getAttribute('prefix');
   xhttp.open("GET", "/files/"+route, true);
@@ -114,9 +119,4 @@ function updateFileInputLabel(){
 window.addEventListener("DOMContentLoaded",
   function(){
     requestFiles({getAttribute: function(){return ''}});
-    document.getElementById('fileInput').addEventListener('change', updateFileInputLabel);
-    document.getElementById('fileInput').addEventListener('invalid', function(){
-      createAlert('danger', 'Select a file', 'files');
-    });
-    document.getElementById('uploadForm').addEventListener('submit', startUploadFiles);
   });
