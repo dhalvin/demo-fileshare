@@ -1,8 +1,8 @@
 -- V. 1.0
 -- Commands used to create the tables for the MySQL database
--- CREATE DATABASE hasfs;
+-- CREATE DATABASE demo_fileshare;
 
-USE hasfs;
+USE demo_fileshare;
 
 CREATE TABLE IF NOT EXISTS Organization (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -62,5 +62,12 @@ CREATE TABLE IF NOT EXISTS DeletedUser (
 
 ALTER TABLE User
 ADD FOREIGN KEY (lastlogin) REFERENCES Login(id);
-INSERT INTO Organization (name, dirkey) VALUES ("Haness & Associates, LLC", "Haness & Associates, LLC");
-INSERT INTO User (fname, lname, email, orgid, status, isadmin, issuperadmin) VALUES ("Admin", "Admin", "admin@hanessassociates.com", (SELECT LAST_INSERT_ID()), 2, 1, 1);
+INSERT INTO Organization (name, dirkey) VALUES ("Demo Client Organization", "Demo Client Organization");
+INSERT INTO Organization (name, dirkey) VALUES ("Demo Organization_1", "Demo Organization_1");
+INSERT INTO User (fname, lname, email, orgid, status, isadmin, issuperadmin) VALUES ("Demo", "Super Admin", "superadmin@files.davidhorning.tech", 1, 1, 1, 1);
+INSERT INTO User (fname, lname, email, orgid, status, isadmin) VALUES ("Demo", "Admin", "admin@files.davidhorning.tech", 1, 1, 1);
+INSERT INTO User (fname, lname, email, orgid, status) VALUES ("Demo", "User", "user@files.davidhorning.tech", 1, 1);
+INSERT INTO User (fname, lname, email, orgid, status) VALUES ("Demo", "Invited_User", "invited_user@files.davidhorning.tech", 1, 2);
+INSERT INTO User (fname, lname, email, orgid, status, isadmin) VALUES ("Demo", "Admin_1", "admin_1@files.davidhorning.tech", 2, 1, 1);
+INSERT INTO User (fname, lname, email, orgid, status) VALUES ("Demo", "User_1", "user_1@files.davidhorning.tech", 2, 1);
+INSERT INTO User (fname, lname, email, orgid, status) VALUES ("Demo", "Invited_User_1", "invited_user@files.davidhorning.tech", 2, 2);
