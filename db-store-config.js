@@ -4,7 +4,7 @@ const dbConfig = {
     host: process.env.MYSQL_URI,
     user: process.env.MYSQL_USER,
     password: process.env.MYSQL_PASS,
-    database: 'demo-fileshare'
+    database: 'demo_fileshare'
   };
 
 module.exports.init = function(sessionModule){

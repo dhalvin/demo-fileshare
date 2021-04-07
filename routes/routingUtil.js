@@ -2,7 +2,7 @@ const logger = require('../logger');
 const mysql = require('../db-config');
 const auth = require('../authentication');
 const validator = require('express-validator');
-const nodemail = require('../email-config');
+//const nodemail = require('../email-config');
 const jwt = require('jsonwebtoken');
 
 module.exports = {
@@ -149,6 +149,7 @@ module.exports = {
   },
 
   gatherSessionVariables: function (responseObject, req) {
+    //await req.session.reload();
     if ('messages' in req.session) {
       responseObject.messages = req.session.messages;
       delete req.session.messages;

@@ -4,12 +4,13 @@ const logger = require('../logger');
 const mysql = require('../db-config');
 const auth = require('../authentication');
 const validator = require('express-validator');
-const nodemail = require('../email-config');
+//const nodemail = require('../email-config');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
 const { nanoid } = require('nanoid');
 const rUtil = require('./routingUtil');
-
+const DEMO_WARNING = JSON.stringify([{ msg: 'This feature is not supported in demo mode!' }]);
+const DEMO_WARNING_AJAX = {data: {errors: [{ msg: 'This feature is not supported in demo mode!' }]}};
 /* Home page. */
 router.get('/', auth.checkAuthenticated, async function (req, res, next) {
   var response = { title: 'Home', user: req.user, scripts: ['index', 'files', 'account'], styles: ['index'] };
@@ -42,30 +43,15 @@ router.get('/', auth.checkAuthenticated, async function (req, res, next) {
 
 /* Change Password */
 router.post('/changepassword', auth.checkAuthenticatedAjax,
-  validator.check('password', 'Password cannot be empty.').notEmpty(),
-  validator.check('newpass', 'New Password must be between 14 and 32 characters').isLength({ min: 14, max: 32 }).bail().isStrongPassword({ minLength: 14 }).withMessage('New Password is not strong enough. Please check password requirements.'),
-  validator.check('passconf').custom(function (value, { req }) {
-    if (value !== req.body.newpass) {
-      throw new Error('Passwords do not match');
-    }
-    return true;
-  }),
-  rUtil.collectValidationErrors(null),
-  auth.authenticateAjax,
   async function (req, res, next) {
-    const hashedPassword = await bcrypt.hash(req.body.newpass, 10);
-    mysql.query('UPDATE User SET password = ? WHERE id = ?', [hashedPassword, req.user.id], function (error, result, fields) {
-      res.json({ data: { success: 'Password changed successfully.' }, errors: null });
-    });
+    res.json(DEMO_WARNING_AJAX);
   });
 
 router.get('/resend',
   auth.checkNotAuthenticated,
-  validator.check('email', 'Please enter a valid email address').isEmail().normalizeEmail(),
-  rUtil.collectValidationErrors('/login'),
   async function (req, res, next) {
-    var user = await auth.getUserFromEmail(req.query.email);
-    rUtil.sendConfirmation(user.id, user.email, user.fname, user.lname, user.regdate, 'An email has been sent to ' + user.email + '. Please follow the link in the email to confirm your email address. (Check your spam folder)', res, req);
+    req.session.errors = DEMO_WARNING;
+    res.redirect('/login');
   });
 
 router.get('/invite/:token', auth.checkNotAuthenticated,
@@ -91,23 +77,8 @@ router.get('/forgot', auth.checkNotAuthenticated, function (req, res, next) {
 
 router.post('/forgot',
   auth.checkNotAuthenticated,
-  rUtil.captureUserInput,
-  validator.check('email', 'Please enter a valid email address').isEmail().normalizeEmail(),
-  rUtil.collectValidationErrors('/forgot'),
   async function (req, res, next) {
-    var user = await auth.getUserFromEmail(req.body.email);
-    if (user) {
-      jwt.sign({ data: user.id.toString(), exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24) }, user.password + '-' + user.regdate, function (sign_error, token) {
-        if (sign_error) throw sign_error;
-        nodemail.sendMail(res, 'email_resetpassword', { title: 'Reset your password', subject: 'Reset your password', user: user, token: 'https://files.hanessassociates.com/reset/' + token }, user.email);
-      });
-    }
-    if (req.session.fields) {
-      req.session.fields.submitted = true;
-    }
-    else {
-      req.session.fields = { submitted: true };
-    }
+    req.session.errors = DEMO_WARNING;
     res.redirect('/forgot');
   });
 
