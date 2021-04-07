@@ -6,7 +6,7 @@ const dbConfig = {
     host: process.env.MYSQL_URI,
     user: process.env.MYSQL_USER,
     password: process.env.MYSQL_PASS,
-    database: 'hasfs',
+    database: 'demo_fileshare',
     multipleStatements: true
   };
 

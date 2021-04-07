@@ -1,6 +1,6 @@
 -- V. 1.0
 -- Commands used to create the tables for the MySQL database
--- CREATE DATABASE demo_fileshare;
+CREATE DATABASE demo_fileshare;
 
 USE demo_fileshare;
 
@@ -70,4 +70,4 @@ INSERT INTO User (fname, lname, email, orgid, status) VALUES ("Demo", "User", "u
 INSERT INTO User (fname, lname, email, orgid, status) VALUES ("Demo", "Invited_User", "invited_user@files.davidhorning.tech", 1, 2);
 INSERT INTO User (fname, lname, email, orgid, status, isadmin) VALUES ("Demo", "Admin_1", "admin_1@files.davidhorning.tech", 2, 1, 1);
 INSERT INTO User (fname, lname, email, orgid, status) VALUES ("Demo", "User_1", "user_1@files.davidhorning.tech", 2, 1);
-INSERT INTO User (fname, lname, email, orgid, status) VALUES ("Demo", "Invited_User_1", "invited_user@files.davidhorning.tech", 2, 2);
+INSERT INTO User (fname, lname, email, orgid, status) VALUES ("Demo", "Invited_User_1", "invited_user_1@files.davidhorning.tech", 2, 2);
