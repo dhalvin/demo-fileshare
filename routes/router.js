@@ -11,7 +11,7 @@ const { nanoid } = require('nanoid');
 const rUtil = require('./routingUtil');
 
 const DEMO_WARNING = JSON.stringify([{ msg: 'This feature is not supported in demo mode!' }]);
-const DEMO_WARNING_AJAX = {data: {errors: [{ msg: 'This feature is not supported in demo mode!' }]}};
+const DEMO_WARNING_AJAX = {data: null, errors: [{ msg: 'This feature is not supported in demo mode!' }]};
 
 /* Home page. */
 router.get('/', auth.checkAuthenticated, async function (req, res, next) {
