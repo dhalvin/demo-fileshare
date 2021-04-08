@@ -1,0 +1,47 @@
+
+<div class="row px-2 py-4 p-md-5">
+  <div class="col-12 px-2 py-4 p-md-5 bg-light rounded shadow">
+    <h3>Select a User to Continue <small class="text-muted">Try them all!</small></h3>
+    {{#if successalert}}
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+      <strong>{{successalert.strong}}</strong> {{successalert.msg}}
+      <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+    {{/if}}
+    {{#each messages}}
+    <div class="alert alert-danger" role="alert">
+      {{{this}}}
+    </div>
+    {{/each}}
+    {{#each errors}}
+    <div class="alert alert-danger" role="alert">
+      {{msg}}
+    </div>
+    {{/each}}
+    {{#each organizations}}
+    <h4>Organization: <small class="text-muted">{{this}}</small></h4>
+    {{#with (lookup (lookup ../demousers this) 0)}}{{this.orgdesc}}{{/with}}
+    <div class="row px-2 py-4 p-md-5 text-center rounded bg-secondary">
+      {{#each (lookup ../demousers this)}}
+      <div class="col-lg-3 col-md-6 mb-4 rightin">
+        <div class="card h-100">
+          <h4 class="card-title">{{this.role}}</h4>
+          {{{this.icon}}}
+          <div class="card-body">
+            <!--<img class="card-img-top img-rounded" src="https://place-hold.it/100/100" alt="{{this.role}}">-->
+            <p class="card-text">{{this.description}}</p>
+          </div>
+          <div class="card-footer">
+            <a href="#" class="btn btn-primary">Login as {{this.role}}</a>
+          </div>
+        </div>
+      </div>
+      {{/each}}
+      <hr/>
+    </div>
+    {{/each}}
+    
+    <small class="form-text text-muted"> Really liked that login page? <a href="/login">Back to Login</a></small>
+</div>
