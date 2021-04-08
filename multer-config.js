@@ -26,7 +26,8 @@ function fileFilter (req, file, cb) {
     return cb(null, false);
   }
 
-  cb(null, true)
+  req.badFiles.push({name: file.originalname, reason: 'You cant upload in demo mode!'});
+    return cb(null, false);
 }
 
 function MyCustomStorage () {}
@@ -39,15 +40,15 @@ MyCustomStorage.prototype._handleFile = function _handleFile (req, file, cb) {
       basePath += (req.params.plan + '/');
     }
   }
-
-  const manager = aws.uploadFile(basePath + file.originalname, file.stream);
+  return cb('You cant upload in demo mode!');
+  /*const manager = aws.uploadFile(basePath + file.originalname, file.stream);
   manager.promise().then(function(data){
     //success
     cb(null, {})
   }, function(error){
     //fail
     cb(error);
-  });
+  });*/
 }
 
 MyCustomStorage.prototype._removeFile = function _removeFile (req, file, cb) {}
