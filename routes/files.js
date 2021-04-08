@@ -64,7 +64,7 @@ router.get('/:org/:year/:plan', auth.checkAuthenticatedAjax, auth.checkOrgAuthor
 });
 
 router.get('/dl/:org/:year/:plan/:file', auth.checkAuthenticatedAjax, auth.checkOrgAuthorized, async function (req, res, next) {
-  var pathKey = req.user.org + '/' + req.params.year + req.params.plan + req.params.file;
+  var pathKey = req.user.org + '/' + req.params.year + '/' + req.params.plan + '/' + req.params.file;
   var s3Stream = aws.getFileStream(pathKey);
   res.set('Cache-Control', 'no-cache');
   res.set('Content-Disposition', 'attachment; filename=' + req.params.file);
