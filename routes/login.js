@@ -15,6 +15,9 @@ router.get('/', auth.checkNotAuthenticated, function (req, res, next) {
 
 router.post('/',
   auth.checkNotAuthenticated,
+  rUtil.captureUserInput,
+  validator.check('email', 'Please enter a valid email address').isEmail().normalizeEmail(),
+  rUtil.collectValidationErrors('/login'),
   function (req, res, next){
     req.session.errors = JSON.stringify([{ msg: 'This feature is not supported in demo mode!' }, {msg: 'Please \"login\" using the demo link below.'}]);
     res.redirect('/login');
