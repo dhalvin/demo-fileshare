@@ -1,0 +1,19 @@
+
+<div class="row px-2 py-4 p-md-5">
+  <div class="col-12 px-2 py-4 p-md-5 bg-light rounded shadow">
+    <h3>About This Website</h3>
+    {{#each messages}}
+    <div class="alert alert-danger" role="alert">
+      {{this}}
+    </div>
+    {{/each}}
+    {{#each errors}}
+    <div class="alert alert-danger" role="alert">
+      {{msg}}
+    </div>
+    {{/each}}
+    <h4>Exchange Documents with Sensitive Data <small class="text-muted">Securely!</small></h4>
+    <p>This page is still a work in progress. Please check back later.</p>
+  </div>
+</div>
+

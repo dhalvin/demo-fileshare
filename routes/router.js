@@ -84,6 +84,13 @@ router.post('/forgot',
     res.redirect('/forgot');
   });
 
+/* About Page */
+router.get('/about', function (req, res, next) {
+  const response = { title: 'About', user: req.user};
+  rUtil.gatherSessionVariables(response, req);
+  res.render('about', response);
+});
+
 /* Confirm Email */
 router.get('/confirm/:token',
   auth.checkNotAuthenticated,
