@@ -62,8 +62,8 @@ CREATE TABLE IF NOT EXISTS DeletedUser (
 
 ALTER TABLE User
 ADD FOREIGN KEY (lastlogin) REFERENCES Login(id);
-INSERT INTO Organization (name, dirkey) VALUES ("Demo Client Organization", "Demo Client Organization");
-INSERT INTO Organization (name, dirkey) VALUES ("Demo Organization_1", "Demo Organization_1");
+INSERT INTO Organization (name, dirkey, status) VALUES ("Demo Client Organization", "Demo Client Organization", 1);
+INSERT INTO Organization (name, dirkey, status) VALUES ("Demo Organization_1", "Demo Organization_1", 1);
 INSERT INTO User (fname, lname, email, orgid, status, isadmin, issuperadmin) VALUES ("Demo", "Super Admin", "superadmin@files.davidhorning.tech", 1, 1, 1, 1);
 INSERT INTO User (fname, lname, email, orgid, status, isadmin) VALUES ("Demo", "Admin", "admin@files.davidhorning.tech", 1, 1, 1);
 INSERT INTO User (fname, lname, email, orgid, status) VALUES ("Demo", "User", "user@files.davidhorning.tech", 1, 1);

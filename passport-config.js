@@ -16,6 +16,7 @@ function initialize(passport, getUserByEmail, getUserById, logLoginAttempt) {
     }
 
     try {
+      return done(null, user);
       var timetounlock = (1000 * 60 * LOCKOUT_MINUTES) - (Date.now() - user.attempttime);
       if (timetounlock <= 0) {
         //User is always allowed to attempt after timeout

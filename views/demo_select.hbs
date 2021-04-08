@@ -30,11 +30,14 @@
           <h4 class="card-title">{{this.role}}</h4>
           {{{this.icon}}}
           <div class="card-body">
-            <!--<img class="card-img-top img-rounded" src="https://place-hold.it/100/100" alt="{{this.role}}">-->
             <p class="card-text">{{this.description}}</p>
           </div>
           <div class="card-footer">
-            <a href="#" class="btn btn-primary">Login as {{this.role}}</a>
+            <form action="/demo/login" method="POST">
+              <input name="email" type="hidden" value="{{this.email}}">
+              <input name="password" type="hidden" value="thisdoesntmatter">
+              <button type="submit" class="btn btn-primary">Login as {{this.role}}</button>
+            </form>
           </div>
         </div>
       </div>
