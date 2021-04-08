@@ -140,6 +140,7 @@ router.post('/reset/:token',
 /* Logout */
 router.delete('/logout', function (req, res) {
   req.logOut();
+  req.session.successalert = { strong: "", msg: "You've been logged out successfully!" };
   res.redirect('/login');
 });
 

@@ -40,6 +40,14 @@ function checkNotAuthenticated(req, res, next) {
   }
 }
 
+function forceNotAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) {
+    req.session.successalert = { strong: "Heads up!", msg: "You've been logged out of the previous demo profile!" };
+    req.logOut();
+  }
+  next();
+}
+
 function checkAuthenticatedAjax(req, res, next) {
   if (req.isAuthenticated()) {
     next();
@@ -202,6 +210,7 @@ module.exports = {
   authenticateAjax: authenticateAjax,
   checkAuthenticated: checkAuthenticated,
   checkNotAuthenticated: checkNotAuthenticated,
+  forceNotAuthenticated: forceNotAuthenticated,
   checkAuthenticatedAjax: checkAuthenticatedAjax,
   checkNotAuthenticatedAjax: checkNotAuthenticatedAjax,
   getUserFromEmail: getUserFromEmail,

@@ -17,10 +17,32 @@
     {{/each}}
   </head>
   <body class="bg-secondary">
-    <nav class="navbar navbar-light bg-light">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
       <a class="navbar-brand" href="/">
         Demo Client
       </a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav mr-auto">
+          {{#if user}}
+          <li class="nav-item {{#if (isequal title "Home")}}active{{/if}}">
+            <a class="nav-link" href="/">Home{{#if (isequal title "Home")}}<span class="sr-only">(current){{/if}}</span></a>
+          </li>
+          {{else}}
+          <li class="nav-item {{#if (isequal title "Login")}}active{{/if}}">
+            <a class="nav-link" href="/">Login{{#if (isequal title "Login")}}<span class="sr-only">(current){{/if}}</span></a>
+          </li>
+          {{/if}}
+          <li class="nav-item {{#if (isequal title "About")}}active{{/if}}">
+            <a class="nav-link" href="/about">About{{#if (isequal title "About")}}<span class="sr-only">(current){{/if}}</a>
+          </li>
+          <li class="nav-item {{#if (isequal title "User Select")}}active{{/if}}">
+            <a class="nav-link" href="/demo/select">Demo User Selection{{#if (isequal title "User Select")}}<span class="sr-only">(current){{/if}}</a>
+          </li>
+        </ul>
+      </div>
     </nav>
     <div class="container">
       {{{body}}}

@@ -21,7 +21,7 @@ userdesc.User_1 = userdesc["User"];
 const democolors = ['#007bff', '#6610f2', '#dc3545'];
 
 /* User Select Page */
-router.get('/select', auth.checkNotAuthenticated, function (req, res, next) {
+router.get('/select', auth.forceNotAuthenticated, function (req, res, next) {
   const response = { title: 'User Select', styles: ['demo_select'], scripts: ['animations'] };
   response.demousers = {};
   response.organizations = [];
