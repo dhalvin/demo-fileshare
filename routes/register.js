@@ -34,29 +34,8 @@ router.post('/',
   auth.assignOrganization,
   async function (req, res, next) {
     try {
-      const hashedPassword = await bcrypt.hash(req.body.password, 10);
-      var regdate = Date.now();
-      var user = await auth.getUserFromEmail(req.body.email);
-      var query = {
-        command: 'INSERT INTO User (fname, lname, orgid, email, password, regdate, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        args: [req.body.fname, req.body.lname, res.locals.org, req.body.email, hashedPassword, regdate, 1]
-      };
-      if (res.locals.invite) {
-        query.command = 'UPDATE User SET fname = ?, lname = ?, password = ?, regdate = ?, status = ? WHERE email = ?';
-        query.args = [req.body.fname, req.body.lname, hashedPassword, regdate, 1, req.body.email];
-      }
-      mysql.query(query.command, query.args,
-        function (error, result, fields) {
-          if (!error) {
-            mysql.query('UPDATE Organization SET status = 1 WHERE id = ? and status = 2', [res.locals.org]);
-            rUtil.sendConfirmation((user ? user.id.toString() : result.insertId.toString()), req.body.email, req.body.fname, req.body.lname, regdate, 'Your account has been registered. An email has been sent to ' + req.body.email + '. Please follow the link in the email to confirm your email address. (Check your spam folder)', res, req);
-          }
-          else {
-            logger.error(error);
-            req.session.messages = ["Something went wrong, please try again."];
-            res.redirect('/register');
-          }
-        });
+      req.session.errors = JSON.stringify([{ msg: 'This feature is not supported in demo mode!' }]);
+      res.redirect('/register');
     } catch {
       res.redirect('/register');
     }
